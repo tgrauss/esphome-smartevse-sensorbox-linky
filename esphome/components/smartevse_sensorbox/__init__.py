@@ -94,7 +94,7 @@ async def to_code(config):
     cg.add(var.set_three_phase(config[CONF_THREE_PHASE]))
     cg.add(var.set_prefer_linky_power(config[CONF_PREFER_LINKY_POWER]))
 
-    # Outputs (sensors auto-créés)
+    # Outputs (create sensors)
     await sensor.new_sensor(var.ct_phase_a_out)
     await sensor.new_sensor(var.ct_phase_b_out)
     await sensor.new_sensor(var.ct_phase_c_out)

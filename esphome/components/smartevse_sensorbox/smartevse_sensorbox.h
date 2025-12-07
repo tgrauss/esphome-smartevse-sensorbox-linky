@@ -80,7 +80,6 @@ namespace esphome {
 
             // Helpers
             inline float calibrate_(float raw, float gain, float offset) const { return raw * gain + offset; }
-            inline bool has_ct_inputs_() const { return ct_a_in_ && ct_b_in_ && ct_c_in_; }
             inline bool has_linky_power_() const { return linky_power_in_ && linky_power_in_->has_state(); }
         };
 

@@ -1,23 +1,24 @@
 SmartEVSE SensorBox Linky
+=========================
 
-Ce projet est une version modifiée de la SensorBox SmartEVSE pour ESPHome.  
+Ce projet est une version modifiée de la SensorBox SmartEVSE pour ESPHome.
 Il permet de remplacer le matériel de la sensorbox d’origine par :
 
-- 3 sondes de courant (CT) connectées via un ADS1115 (entrées A1, A2, A3).  
-- Une entrée de référence 1 V (A0) utilisée pour l’autocalibration des CT.  
-- Un compteur Linky connecté en Modbus sur GPIO44.  
+- 3 sondes de courant (CT) connectées via un ADS1115 (entrées A1, A2, A3).
+- Une entrée de référence 1 V (A0) utilisée pour l’autocalibration des CT.
+- Un compteur Linky connecté en Modbus sur GPIO44.
 
 Toutes les informations (CT et Linky) sont :
-- Disponibles dans Home Assistant via les sensors ESPHome.  
+- Disponibles dans Home Assistant via les sensors ESPHome.
 - Exposées en continu sur un bus Modbus esclave, pour être lues par un autre ESPHome master ou par le SmartEVSE.
 
 Fonctionnalités principales
 ---------------------------
-- Lecture des 3 sondes CT avec calibration (gain, offset).  
-- Autocalibration automatique grâce à la référence 1 V sur A0.  
-- Lecture des registres Modbus du compteur Linky (puissance, énergie).  
-- Calcul de la puissance totale (mono ou tri, avec facteur de puissance configurable).  
-- Préférence configurable : utiliser la puissance Linky ou les CT comme source principale.  
+- Lecture des 3 sondes CT avec calibration (gain, offset).
+- Autocalibration automatique grâce à la référence 1 V sur A0.
+- Lecture des registres Modbus du compteur Linky (puissance, énergie).
+- Calcul de la puissance totale (mono ou tri, avec facteur de puissance configurable).
+- Préférence configurable : utiliser la puissance Linky ou les CT comme source principale.
 - Exposition simultanée des données vers Home Assistant et Modbus esclave.
 
 Exemple de configuration YAML
@@ -88,7 +89,7 @@ sensor:
     modbus_controller_id: linky_ctrl
     id: linky_power_in
     name: "Raw Linky Power"
-    address: 0x000C
+    address: 0x000C   # à confirmer selon table originale
     register_type: holding
     value_type: U_WORD
     unit_of_measurement: "W"
@@ -97,7 +98,7 @@ sensor:
     modbus_controller_id: linky_ctrl
     id: linky_energy_in
     name: "Raw Linky Energy"
-    address: 0x000E
+    address: 0x000E   # à confirmer selon table originale
     register_type: holding
     value_type: U_DWORD
     unit_of_measurement: "Wh"
@@ -109,11 +110,21 @@ smartevse_sensorbox:
   ads_ref: ads_ref_in
   linky_power: linky_power_in
   linky_energy: linky_energy_in
+
+  ct_gain_a: 1.0
+  ct_gain_b: 1.0
+  ct_gain_c: 1.0
+  ct_offset_a: 0.0
+  ct_offset_b: 0.0
+  ct_offset_c: 0.0
+
+  ads_ref_voltage: 1.0
+  autocalibration: true
+
   nominal_voltage: 230
   power_factor: 0.95
   three_phase: false
   prefer_linky_power: true
-  autocalibration: true
   update_interval: 1s
 
 uart:
@@ -126,33 +137,33 @@ modbus_server:
   id: mb_slave
   uart_id: uart_modbus_slave
   holding_registers:
-    - address: 100
+    - address: 0      # CT Phase A
       sensor_id: smartevse_sensorbox.ct_phase_a_out
-    - address: 101
+    - address: 1      # CT Phase B
       sensor_id: smartevse_sensorbox.ct_phase_b_out
-    - address: 102
+    - address: 2      # CT Phase C
       sensor_id: smartevse_sensorbox.ct_phase_c_out
-    - address: 103
-      sensor_id: smartevse_sensorbox.ct_total_current_out
-    - address: 104
+    - address: 3      # Total Power
       sensor_id: smartevse_sensorbox.ct_total_power_out
-    - address: 110
-      sensor_id: smartevse_sensorbox.linky_power_out
-    - address: 111
-      sensor_id: smartevse_sensorbox.linky_energy_out
-    - address: 120
+    - address: 4      # Total Current
+      sensor_id: smartevse_sensorbox.ct_total_current_out
+    - address: 5      # Preference CT/Linky
       sensor_id: smartevse_sensorbox.prefer_ct_out
+    - address: 6      # Linky Power
+      sensor_id: smartevse_sensorbox.linky_power_out
+    - address: 7      # Linky Energy
+      sensor_id: smartevse_sensorbox.linky_energy_out
 
 Notes
 -----
-- Les adresses Modbus (100–120) sont des exemples. Adapte-les à la table attendue par ton SmartEVSE.  
-- La préférence CT/Linky est exposée en tant que sensor (prefer_ct_out) :  
-  - 1 = CT utilisé comme source principale.  
-  - 0 = Linky utilisé comme source principale.  
-- L’autocalibration ajuste automatiquement les gains des CT en fonction de la référence 1 V.  
+- Les adresses Modbus ci-dessus doivent être confirmées et alignées avec la table officielle du projet original.
+- La préférence CT/Linky est exposée en tant que sensor (prefer_ct_out) :
+  - 1 = CT utilisé comme source principale.
+  - 0 = Linky utilisé comme source principale.
+- L’autocalibration ajuste automatiquement les gains des CT en fonction de la référence 1 V.
 - Les valeurs sont rafraîchies toutes les secondes.
 
 Licence
 -------
-Ce projet est basé sur ESPHome et adapté pour SmartEVSE.  
+Ce projet est basé sur ESPHome et adapté pour SmartEVSE.
 Licence : MIT.
