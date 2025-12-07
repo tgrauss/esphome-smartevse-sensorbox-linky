@@ -52,14 +52,14 @@ Exemples d’adresses :
 
 | Étiquette | Adresse | Type   |
 |-----------|---------|--------|
-| EAST      | 0x0000  | U_DWORD |
-| IRMS1     | 0x0018  | U_WORD  |
-| IRMS2     | 0x0019  | U_WORD  |
-| IRMS3     | 0x001A  | U_WORD  |
-| URMS1     | 0x001B  | U_WORD  |
-| URMS2     | 0x001C  | U_WORD  |
-| URMS3     | 0x001D  | U_WORD  |
-| SINSTS    | 0x0030  | U_DWORD |
+| EAST      | 0  | U_DWORD |
+| IRMS1     | 24  | U_WORD  |
+| IRMS2     | 25  | U_WORD  |
+| IRMS3     | 26  | U_WORD  |
+| URMS1     | 27  | U_WORD  |
+| URMS2     | 28  | U_WORD  |
+| URMS3     | 29  | U_WORD  |
+| SINSTS    | 30  | U_DWORD |
 
 Les autres étiquettes (EASFxx, SMAXSNx, PREF, CCASN, NTARF, NJOURF, NGTF, LTARF, etc.) sont également mappées selon le tableau du projet linky_modbus.  
 En plus, les valeurs des sondes CT et les paramètres SensorBox (rotation, wire_mode, wifi_mode) sont exposés.
@@ -141,75 +141,6 @@ Paramètre profile :
 - Profil linky_modbus :
   - Mappage complet des étiquettes Teleinfo et des CT (totaux + phases)
   - Destiné au bus esclave pour autres maîtres (ESPHome/PLC/SCADA)
-
----
-
-## 🗂️ Registres Modbus (profil linky_modbus)
-
-Énergies (U_DWORD, Wh)
-- EAST : 0x0000 — Énergie soutirée totale
-- EAIT : 0x0002 — Énergie injectée totale
-- EASF01 : 0x0004
-- EASF02 : 0x0006
-- EASF03 : 0x0008
-- EASF04 : 0x000A
-- EASF05 : 0x000C
-- EASF06 : 0x000E
-- EASF07 : 0x0010
-- EASF08 : 0x0012
-- EASF09 : 0x0014
-- EASF10 : 0x0016
-
-Courants et tensions RMS (U_WORD)
-- IRMS1 : 0x0018
-- IRMS2 : 0x0019
-- IRMS3 : 0x001A
-- URMS1 : 0x001B
-- URMS2 : 0x001C
-- URMS3 : 0x001D
-
-Puissances instantanées et maxima (U_DWORD, VA)
-- SINSTS  : 0x0030 — Puissance apparente totale
-- SINSTS1 : 0x0032 — L1
-- SINSTS2 : 0x0034 — L2
-- SINSTS3 : 0x0036 — L3
-- SMAXSN  : 0x0038 — Max jour total
-- SMAXSN1 : 0x003A — Max jour L1
-- SMAXSN2 : 0x003C — Max jour L2
-- SMAXSN3 : 0x003E — Max jour L3
-
-Contrat / coupure / tarification
-- PCOUP  : 0x0046 (U_DWORD) — Puissance de coupure
-- PREF   : 0x0048 (U_WORD)  — Puissance de référence
-- CCASN  : 0x0049 (U_WORD)  — Index asservi courant
-- CCASN-1: 0x0050 (U_WORD)  — Index asservi précédent
-- NTARF  : 0x004C (U_WORD)  — N° de tarif en cours
-- LTARF  : 0x004D (U_QWORD selon implémentation) — Libellé tarif
-- NJOURF+1 : 0x004E (U_WORD) — Numéro de jour suivant
-- NGTF   : 0x004F (U_QWORD) — Type de contrat / groupe tarifaire
-- PJOURF+1 : 0x0050 (U_QWORD) — Profil tarifaire prévu demain
-- PPOINTE  : 0x0052 (U_QWORD) — Indication jour de pointe demain
-
-CT totaux (capteurs sondes de courant côté SensorBox)
-- CT total courant : 0x0058 (U_WORD, A)
-- CT total puissance : 0x005A (U_DWORD, W/VA)
-
-CT individuels par phase
-- CT courant phase A : 0x0060 (U_WORD, A)
-- CT courant phase B : 0x0061 (U_WORD, A)
-- CT courant phase C : 0x0062 (U_WORD, A)
-- CT puissance phase A : 0x0064 (U_DWORD, W/VA) — si disponible
-- CT puissance phase B : 0x0065 (U_DWORD, W/VA) — si disponible
-- CT puissance phase C : 0x0066 (U_DWORD, W/VA) — si disponible
-
-Paramètres SensorBox (Holding Registers)
-- rotation : 0x005C (U_WORD) — rotation champ
-- wifi_mode : 0x005D (U_WORD) — mode WiFi
-
-Remarques :
-- Les types U_WORD/U_DWORD/U_QWORD dépendent de votre implémentation du `ModbusServer` (endianness, largeur). Conservez la cohérence avec `linky_modbus`.
-- Le profil smartevse_v2 ne doit pas être modifié (adresses/types comme l’original).
-- Le profil linky_modbus ne chevauche pas les adresses réservées au profil smartevse_v2.
 
 ---
 
