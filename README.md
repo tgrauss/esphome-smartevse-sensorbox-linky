@@ -25,6 +25,7 @@ Le composant expose **tous les registres Modbus de la Sensorbox‑V2** :
 
 ## Exemple YAML pour ESP32‑S3‑Zero
 
+```yaml
 esphome:
   name: smartevse-sensorbox-zero
   platform: ESP32
@@ -97,11 +98,13 @@ smartevse_sensorbox:
   wire_mode: 1
   wifi_enabled: true
   update_interval: 1s
-
+  
+```
 ---
 
-## Exemple YAML pour ESP32‑S3‑ETH (Ethernet PoE)
+## Exemple YAML pour ESP32‑S3‑ETH (POE Ethernet)
 
+```yaml
 esphome:
   name: smartevse-sensorbox-eth
   platform: ESP32
@@ -174,6 +177,7 @@ smartevse_sensorbox:
   wire_mode: 1
   wifi_enabled: false   # Désactiver le WiFi si Ethernet PoE est utilisé
   update_interval: 1s
+```
 
 ---
 
