@@ -62,7 +62,7 @@ Exemples d’adresses :
 | SINSTS    | 0x0030  | U_DWORD |
 
 Les autres étiquettes (EASFxx, SMAXSNx, PREF, CCASN, NTARF, NJOURF, NGTF, LTARF, etc.) sont également mappées selon le tableau du projet linky_modbus.  
-En plus, les valeurs des sondes CT et les paramètres SensorBox (rotation, wire_mode, wifi_mode) sont exposés dans une zone libre (ex. 0x0050+).
+En plus, les valeurs des sondes CT et les paramètres SensorBox (rotation, wire_mode, wifi_mode) sont exposés.
 
 ---
 
@@ -113,8 +113,11 @@ Elle regroupe :
 - Composant `smartevse_sensorbox` (CT + TIC)
 - Composant `smartevse_modbus` (mapping Modbus)
 
-Exemple minimal (à placer dans votre configuration ESPHome) :
+---
 
+### Exemple minimal (à placer dans votre configuration ESPHome) :
+
+```yaml
 smartevse_modbus:
   id: mb_esphome
   modbus_server_id: mb_server_esphome
@@ -124,6 +127,7 @@ smartevse_modbus:
 Paramètre profile :
 - smartevse_v2 : compatibilité 100% avec SmartEVSE (SensorBox‑V2) sur son bus dédié
 - linky_modbus : expose toutes les étiquettes Teleinfo + sondes CT individuelles sur le bus esclave destiné aux autres maîtres ESPHome/tiers
+```
 
 ---
 
@@ -177,12 +181,12 @@ Puissances instantanées et maxima (U_DWORD, VA)
 Contrat / coupure / tarification
 - PCOUP  : 0x0046 (U_DWORD) — Puissance de coupure
 - PREF   : 0x0048 (U_WORD)  — Puissance de référence
-- CCASN  : 0x004A (U_WORD)  — Index asservi courant
-- CCASN-1: 0x004B (U_WORD)  — Index asservi précédent
+- CCASN  : 0x0049 (U_WORD)  — Index asservi courant
+- CCASN-1: 0x0050 (U_WORD)  — Index asservi précédent
 - NTARF  : 0x004C (U_WORD)  — N° de tarif en cours
-- LTARF  : 0x004D (U_WORD/U_QWORD selon implémentation) — Libellé tarif
+- LTARF  : 0x004D (U_QWORD selon implémentation) — Libellé tarif
 - NJOURF+1 : 0x004E (U_WORD) — Numéro de jour suivant
-- NGTF   : 0x004F (U_WORD/U_QWORD) — Type de contrat / groupe tarifaire
+- NGTF   : 0x004F (U_QWORD) — Type de contrat / groupe tarifaire
 - PJOURF+1 : 0x0050 (U_QWORD) — Profil tarifaire prévu demain
 - PPOINTE  : 0x0052 (U_QWORD) — Indication jour de pointe demain
 

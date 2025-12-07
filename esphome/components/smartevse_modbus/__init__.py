@@ -92,6 +92,7 @@ async def to_code(config):
     cg.add(var.set_ccasn_1(sensorbox.ccasn_1_out))
     cg.add(var.set_ntarf(sensorbox.ntarf_out))
     cg.add(var.set_ltarf(sensorbox.ltarf_out))
+    cg.add(var.set_njourf1(sensorbox.njourf_out))
     cg.add(var.set_njourf1(sensorbox.njourf1_out))
     cg.add(var.set_ngtf(sensorbox.ngtf_out))
     cg.add(var.set_pjourf1(sensorbox.pjourf1_out))

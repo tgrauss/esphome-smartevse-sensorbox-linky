@@ -52,8 +52,15 @@ namespace esphome {
             this->server_->add_input_register(this->sensorbox_->prefer_ct_out,       0x000C);
 
             // Holding Registers (FC=06)
-            this->server_->add_holding_register(this->sensorbox_->rotation_out,  0x0800);
-            this->server_->add_holding_register(this->sensorbox_->wire_mode_out, 0x0800);
+            // Créer un capteur virtuel qui combine rotation + wire_mode
+            auto *config_reg = new Sensor();
+            config_reg->set_state(
+                (this->sensorbox_->rotation_out->state ? 0x01 : 0x00) |
+                (this->sensorbox_->wire_mode_out->state ? 0x02 : 0x00)
+            );
+
+            // Publier ce capteur sur l’adresse 0x0800
+            this->server_->add_holding_register(config_reg, 0x0800);
             this->server_->add_holding_register(this->sensorbox_->wifi_mode_out, 0x0801);
         }
 
@@ -64,68 +71,69 @@ namespace esphome {
             ESP_LOGI(TAG, "Setting up Linky Modbus mapping");
 
             // --- Énergies ---
-            server_->add_input_register(sensorbox_->east_out,   0x0000); // EAST
-            server_->add_input_register(sensorbox_->eait_out,   0x0002); // EAIT
-            server_->add_input_register(sensorbox_->easf01_out, 0x0004);
-            server_->add_input_register(sensorbox_->easf02_out, 0x0006);
-            server_->add_input_register(sensorbox_->easf03_out, 0x0008);
-            server_->add_input_register(sensorbox_->easf04_out, 0x000A);
-            server_->add_input_register(sensorbox_->easf05_out, 0x000C);
-            server_->add_input_register(sensorbox_->easf06_out, 0x000E);
-            server_->add_input_register(sensorbox_->easf07_out, 0x0010);
-            server_->add_input_register(sensorbox_->easf08_out, 0x0012);
-            server_->add_input_register(sensorbox_->easf09_out, 0x0014);
-            server_->add_input_register(sensorbox_->easf10_out, 0x0016);
+            server_->add_input_register(sensorbox_->east_out,   00); // EAST
+            server_->add_input_register(sensorbox_->eait_out,   02); // EAIT
+            server_->add_input_register(sensorbox_->easf01_out, 04);
+            server_->add_input_register(sensorbox_->easf02_out, 06);
+            server_->add_input_register(sensorbox_->easf01_out, 08);
+            server_->add_input_register(sensorbox_->easf02_out, 10);
+            server_->add_input_register(sensorbox_->easf01_out, 12);
+            server_->add_input_register(sensorbox_->easf02_out, 14);
+            server_->add_input_register(sensorbox_->easf03_out, 16);
+            server_->add_input_register(sensorbox_->easf04_out, 18);
+            server_->add_input_register(sensorbox_->easf05_out, 20);
+            server_->add_input_register(sensorbox_->easf06_out, 22);
 
             // --- Courants et tensions RMS ---
-            server_->add_input_register(sensorbox_->irms1_out, 0x0018);
-            server_->add_input_register(sensorbox_->irms2_out, 0x0019);
-            server_->add_input_register(sensorbox_->irms3_out, 0x001A);
-            server_->add_input_register(sensorbox_->urms1_out, 0x001B);
-            server_->add_input_register(sensorbox_->urms2_out, 0x001C);
-            server_->add_input_register(sensorbox_->urms3_out, 0x001D);
+            server_->add_input_register(sensorbox_->irms1_out, 24);
+            server_->add_input_register(sensorbox_->irms2_out, 25);
+            server_->add_input_register(sensorbox_->irms3_out, 26);
+            server_->add_input_register(sensorbox_->urms1_out, 27);
+            server_->add_input_register(sensorbox_->urms2_out, 28);
+            server_->add_input_register(sensorbox_->urms3_out, 29);
 
             // --- Puissances instantanées ---
-            server_->add_input_register(sensorbox_->sinsts_out,  0x0030);
-            server_->add_input_register(sensorbox_->sinsts1_out, 0x0032);
-            server_->add_input_register(sensorbox_->sinsts2_out, 0x0034);
-            server_->add_input_register(sensorbox_->sinsts3_out, 0x0036);
+            server_->add_input_register(sensorbox_->sinsts_out,  30);
+            server_->add_input_register(sensorbox_->sinsts1_out, 32);
+            server_->add_input_register(sensorbox_->sinsts2_out, 34);
+            server_->add_input_register(sensorbox_->sinsts3_out, 36);
 
             // --- Puissances max ---
-            server_->add_input_register(sensorbox_->smaxsn_out,  0x0038);
-            server_->add_input_register(sensorbox_->smaxsn1_out, 0x003A);
-            server_->add_input_register(sensorbox_->smaxsn2_out, 0x003C);
-            server_->add_input_register(sensorbox_->smaxsn3_out, 0x003E);
+            server_->add_input_register(sensorbox_->smaxsn_out,  38);
+            server_->add_input_register(sensorbox_->smaxsn1_out, 40);
+            server_->add_input_register(sensorbox_->smaxsn2_out, 42);
+            server_->add_input_register(sensorbox_->smaxsn3_out, 44);
 
             // --- Contrat / coupure ---
-            server_->add_input_register(sensorbox_->pcoup_out, 0x0046);
-            server_->add_input_register(sensorbox_->pref_out,  0x0048);
+            server_->add_input_register(sensorbox_->pcoup_out, 46);
+            server_->add_input_register(sensorbox_->pref_out,  48);
 
             // --- Asservissement / tarifs ---
-            server_->add_input_register(sensorbox_->ccasn_out,    0x004A);
-            server_->add_input_register(sensorbox_->ccasn_1_out,  0x004B);
-            server_->add_input_register(sensorbox_->ntarf_out,    0x004C);
-            server_->add_input_register(sensorbox_->ltarf_out,    0x004D);
-            server_->add_input_register(sensorbox_->njourf1_out,  0x004E);
-            server_->add_input_register(sensorbox_->ngtf_out,     0x004F);
-            server_->add_input_register(sensorbox_->pjourf1_out,  0x0050);
-            server_->add_input_register(sensorbox_->ppointe_out,  0x0052);
+            server_->add_input_register(sensorbox_->ccasn_out,    49);
+            //server_->add_input_register(sensorbox_->ccasn_1_out,  0x004B);
+            server_->add_input_register(sensorbox_->ntarf_out,    51);
+            server_->add_input_register(sensorbox_->ltarf_out,    58);
+            server_->add_input_register(sensorbox_->njourf_out,   52);
+            server_->add_input_register(sensorbox_->njourf1_out,  53);
+            server_->add_input_register(sensorbox_->ngtf_out,     54);
+            server_->add_input_register(sensorbox_->pjourf1_out,  62);
+            server_->add_input_register(sensorbox_->ppointe_out,  66);
 
             // --- CT totaux ---
-            server_->add_input_register(sensorbox_->ct_total_current_out, 0x0058);
-            server_->add_input_register(sensorbox_->ct_total_power_out,   0x005A);
+            server_->add_input_register(sensorbox_->ct_total_current_out, 70);
+            server_->add_input_register(sensorbox_->ct_total_power_out,   72);
 
             // --- CT individuels par phase ---
-            server_->add_input_register(sensorbox_->ct_phase_a_out,       0x0060);
-            server_->add_input_register(sensorbox_->ct_phase_b_out,       0x0061);
-            server_->add_input_register(sensorbox_->ct_phase_c_out,       0x0062);
-            server_->add_input_register(sensorbox_->ct_power_phase_a_out, 0x0064);
-            server_->add_input_register(sensorbox_->ct_power_phase_b_out, 0x0065);
-            server_->add_input_register(sensorbox_->ct_power_phase_c_out, 0x0066);
+            server_->add_input_register(sensorbox_->ct_phase_a_out,       80);
+            server_->add_input_register(sensorbox_->ct_phase_b_out,       81);
+            server_->add_input_register(sensorbox_->ct_phase_c_out,       82);
+            server_->add_input_register(sensorbox_->ct_power_phase_a_out, 84);
+            server_->add_input_register(sensorbox_->ct_power_phase_b_out, 85);
+            server_->add_input_register(sensorbox_->ct_power_phase_c_out, 86);
 
             // --- Paramètres SensorBox ---
-            server_->add_holding_register(sensorbox_->rotation_out,  0x005C);
-            server_->add_holding_register(sensorbox_->wifi_mode_out, 0x005D);
+            server_->add_holding_register(sensorbox_->rotation_out,  90);
+            server_->add_holding_register(sensorbox_->wifi_mode_out, 91);
         }
 
     }  // namespace smartevse_modbus
