@@ -15,12 +15,8 @@ external_components:
 # I²C pour ADS1115 (CT)
 # -------------------------------
 i2c:
-  # ESP32-S3-Zero
   sda: GPIO6
   scl: GPIO5
-  # ESP32-S3-ETH (PoE)
-  # sda: GPIO1
-  # scl: GPIO2
   scan: true
 
 ads1115:
@@ -28,7 +24,7 @@ ads1115:
     address: 0x48
 
 # -------------------------------
-# UARTs regroupés
+# UARTs
 # -------------------------------
 uart:
   - id: uart_tic
@@ -39,23 +35,13 @@ uart:
     stop_bits: 1
 
   - id: uart_smartevse
-    # RS485 vers SmartEVSE (maître SmartEVSE)
-    # ESP32-S3-Zero
     tx_pin: GPIO11
     rx_pin: GPIO13
-    # ESP32-S3-ETH (PoE)
-    # tx_pin: GPIO40
-    # rx_pin: GPIO42
     baud_rate: 9600
 
   - id: uart_esphome
-    # RS485 vers autre maître ESPHome
-    # ESP32-S3-Zero
     tx_pin: GPIO7
     rx_pin: GPIO9
-    # ESP32-S3-ETH (PoE)
-    # tx_pin: GPIO37
-    # rx_pin: GPIO39
     baud_rate: 9600
 
 # -------------------------------
@@ -71,81 +57,77 @@ sensor:
   - platform: teleinfo
     tag_name: "EAST"
     id: east
-    name: Energie soutirée
+    name: "Energie soutirée"
     unit_of_measurement: "Wh"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "SINSTS"
     id: sinsts
-    name: Puissance apparente totale
+    name: "Puissance apparente totale"
     unit_of_measurement: "VA"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "IRMS1"
     id: irms1
-    name: Courant phase 1
+    name: "Courant phase 1"
     unit_of_measurement: "A"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "IRMS2"
     id: irms2
-    name: Courant phase 2
+    name: "Courant phase 2"
     unit_of_measurement: "A"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "IRMS3"
     id: irms3
-    name: Courant phase 3
+    name: "Courant phase 3"
     unit_of_measurement: "A"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "URMS1"
     id: urms1
-    name: Tension phase 1
+    name: "Tension phase 1"
     unit_of_measurement: "V"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "URMS2"
     id: urms2
-    name: Tension phase 2
+    name: "Tension phase 2"
     unit_of_measurement: "V"
     teleinfo_id: linky_tic
 
   - platform: teleinfo
     tag_name: "URMS3"
     id: urms3
-    name: Tension phase 3
+    name: "Tension phase 3"
     unit_of_measurement: "V"
     teleinfo_id: linky_tic
 
 # -------------------------------
-# Deux serveurs Modbus (même composant, deux instances)
+# Deux serveurs Modbus
 # -------------------------------
 modbus_server:
   - id: mb_smartevse
-    # Serveur exposant les registres SensorBox-V2 vers SmartEVSE
     uart_id: uart_smartevse
-    # ESP32-S3-Zero
     enable_pin: GPIO12
-    # ESP32-S3-ETH (PoE)
-    # enable_pin: GPIO41
+    address: 10
+    baud_rate: 9600
 
   - id: mb_esphome
-    # Serveur exposant les mêmes registres vers l'autre maître ESPHome
     uart_id: uart_esphome
-    # ESP32-S3-Zero
     enable_pin: GPIO8
-    # ESP32-S3-ETH (PoE)
-    # enable_pin: GPIO38
+    address: 100
+    baud_rate: 9600
 
 # -------------------------------
-# Composant custom SensorBox
+# Composant SensorBox
 # -------------------------------
 smartevse_sensorbox:
   id: sensorbox
@@ -177,6 +159,7 @@ smartevse_sensorbox:
 smartevse_modbus:
   modbus_server_id: mb_smartevse
   sensorbox_id: sensorbox
+  profile: smartevse_v2
 
 # -------------------------------
 # Mapping Modbus vers autre maître ESPHome
@@ -184,3 +167,4 @@ smartevse_modbus:
 smartevse_modbus:
   modbus_server_id: mb_esphome
   sensorbox_id: sensorbox
+  profile: linky_modbus

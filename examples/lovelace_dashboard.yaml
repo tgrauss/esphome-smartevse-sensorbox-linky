@@ -1,0 +1,66 @@
+title: SmartEVSE SensorBox
+views:
+  - title: Énergie & Puissance
+    path: energie
+    cards:
+      - type: entities
+        title: Mesures Linky
+        entities:
+          - sensor.smartevse_sensorbox_energie_soutiree
+          - sensor.smartevse_sensorbox_puissance_apparente_totale
+          - sensor.smartevse_sensorbox_ct_total_power
+
+      - type: gauge
+        name: Puissance totale (CT)
+        entity: sensor.smartevse_sensorbox_ct_total_power
+        min: 0
+        max: 12000
+        severity:
+          green: 0
+          yellow: 6000
+          red: 10000
+
+      - type: history-graph
+        title: Puissance (VA/W)
+        hours_to_show: 24
+        entities:
+          - sensor.smartevse_sensorbox_puissance_apparente_totale
+          - sensor.smartevse_sensorbox_ct_total_power
+
+  - title: Courants
+    path: courants
+    cards:
+      - type: entities
+        title: Courants par phase
+        entities:
+          - sensor.smartevse_sensorbox_courant_phase_1
+          - sensor.smartevse_sensorbox_courant_phase_2
+          - sensor.smartevse_sensorbox_courant_phase_3
+          - sensor.smartevse_sensorbox_ct_total_current
+
+      - type: history-graph
+        title: Courants (A)
+        hours_to_show: 24
+        entities:
+          - sensor.smartevse_sensorbox_courant_phase_1
+          - sensor.smartevse_sensorbox_courant_phase_2
+          - sensor.smartevse_sensorbox_courant_phase_3
+          - sensor.smartevse_sensorbox_ct_total_current
+
+  - title: Tensions
+    path: tensions
+    cards:
+      - type: entities
+        title: Tensions par phase
+        entities:
+          - sensor.smartevse_sensorbox_tension_phase_1
+          - sensor.smartevse_sensorbox_tension_phase_2
+          - sensor.smartevse_sensorbox_tension_phase_3
+
+      - type: history-graph
+        title: Tensions (V)
+        hours_to_show: 24
+        entities:
+          - sensor.smartevse_sensorbox_tension_phase_1
+          - sensor.smartevse_sensorbox_tension_phase_2
+          - sensor.smartevse_sensorbox_tension_phase_3

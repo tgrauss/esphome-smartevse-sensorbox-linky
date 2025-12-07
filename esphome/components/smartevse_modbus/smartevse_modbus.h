@@ -7,17 +7,25 @@
 namespace esphome {
     namespace smartevse_modbus {
 
-        // Ce composant gère l’exposition des registres Modbus SensorBox-V2
-        // en s’appuyant sur les capteurs fournis par SmartEVSESensorBox.
+        enum class Profile {
+            SMART_EVSE_V2,
+            LINKY_MODBUS
+        };
 
         class SmartEVSEModbusServer : public Component {
         public:
             SmartEVSEModbusServer() = default;
 
-            // Lien vers le serveur Modbus ESPHome
             void set_modbus_server(modbus_server::ModbusServer *server) { server_ = server; }
+            void set_profile(const std::string &profile) {
+                if (profile == "linky_modbus") {
+                    profile_ = Profile::LINKY_MODBUS;
+                } else {
+                    profile_ = Profile::SMART_EVSE_V2;
+                }
+            }
 
-            // Lien vers les capteurs de la SensorBox
+            // Bind sensors from SensorBox
             void set_version(sensor::Sensor *s) { version_ = s; }
             void set_dsmr_info(sensor::Sensor *s) { dsmr_info_ = s; }
             void set_voltage_l1(sensor::Sensor *s) { voltage_l1_ = s; }
@@ -48,8 +56,9 @@ namespace esphome {
 
         protected:
             modbus_server::ModbusServer *server_{nullptr};
+            Profile profile_{Profile::SMART_EVSE_V2};
 
-            // Pointeurs vers les capteurs
+            // Sensors
             sensor::Sensor *version_{nullptr};
             sensor::Sensor *dsmr_info_{nullptr};
             sensor::Sensor *voltage_l1_{nullptr};
@@ -74,6 +83,10 @@ namespace esphome {
             sensor::Sensor *portal_pwd_{nullptr};
             sensor::Sensor *rotation_{nullptr};
             sensor::Sensor *wifi_mode_{nullptr};
+
+            // Internal helpers
+            void setup_smartevse_v2_mapping_();
+            void setup_linky_modbus_mapping_();
         };
 
     }  // namespace smartevse_modbus

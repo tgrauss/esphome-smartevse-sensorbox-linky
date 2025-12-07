@@ -1,14 +1,12 @@
 #include "smartevse_sensorbox.h"
 #include "esphome/core/log.h"
-#include <math.h>
 #include <ctime>
+#include <cmath>
 
 namespace esphome {
   namespace smartevse_sensorbox {
 
     static const char *const TAG = "smartevse_sensorbox";
-
-    SmartEVSESensorBox::SmartEVSESensorBox() : PollingComponent(1000) {}
 
     void SmartEVSESensorBox::setup() {
       ESP_LOGI(TAG, "SmartEVSE SensorBox setup complete");
@@ -55,12 +53,10 @@ namespace esphome {
       }
 
       // 4) Données TIC Linky
-      if (linky_power_in_ && linky_power_in_->has_state()) {
+      if (linky_power_in_ && linky_power_in_->has_state())
         linky_power_out->publish_state(linky_power_in_->state);
-      }
-      if (linky_energy_in_ && linky_energy_in_->has_state()) {
+      if (linky_energy_in_ && linky_energy_in_->has_state())
         linky_energy_out->publish_state(linky_energy_in_->state);
-      }
 
       // 5) Choix de la puissance totale
       float p_out = NAN;
@@ -86,10 +82,7 @@ namespace esphome {
       if (linky_voltage_l3_in_ && linky_voltage_l3_in_->has_state())
         voltage_l3_out->publish_state(linky_voltage_l3_in_->state);
 
-      // 7) Flag de préférence
-      prefer_ct_out->publish_state(prefer_linky_power_ ? 0.0f : 1.0f);
-
-      // 8) Registres supplémentaires
+      // 7) Registres supplémentaires
       version_out->publish_state(0x0114); // Exemple version
       dsmr_info_out->publish_state(0x3283); // Exemple DSMR info
 
@@ -118,7 +111,7 @@ namespace esphome {
       // WiFi mode (0x0801)
       wifi_mode_out->publish_state(wifi_mode_);
 
-      // 9) Horodatage
+      // 8) Horodatage
       std::time_t t = std::time(nullptr);
       std::tm *tm = std::localtime(&t);
       if (tm) {
