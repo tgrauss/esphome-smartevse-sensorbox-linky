@@ -1,114 +1,105 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart
-from esphome.const import CONF_ADDRESS, CONF_ID
+from esphome.components import sensor
+from esphome.const import CONF_ID
 
-CONF_USE_CT_READINGS = "use_ct_readings"
-CONF_CT_WIRES = "ct_wires"
-CONF_CT_ROTATION = "ct_rotation"
-CONF_P1_SENSORS = "p1_sensors"
-CONF_P1_SENSOR_DSMR_VERSION = "dsmr_version"
-CONF_P1_SENSOR_VOLTAGE_PHASE_1 = "voltage_phase_1"
-CONF_P1_SENSOR_VOLTAGE_PHASE_2 = "voltage_phase_2"
-CONF_P1_SENSOR_VOLTAGE_PHASE_3 = "voltage_phase_3"
-CONF_P1_SENSOR_POWER_CONSUMED_PHASE_1 = "power_consumed_phase_1"
-CONF_P1_SENSOR_POWER_CONSUMED_PHASE_2 = "power_consumed_phase_2"
-CONF_P1_SENSOR_POWER_CONSUMED_PHASE_3 = "power_consumed_phase_3"
-CONF_P1_SENSOR_POWER_PRODUCED_PHASE_1 = "power_produced_phase_1"
-CONF_P1_SENSOR_POWER_PRODUCED_PHASE_2 = "power_produced_phase_2"
-CONF_P1_SENSOR_POWER_PRODUCED_PHASE_3 = "power_produced_phase_3"
+smartevse_ns = cg.global_ns.namespace("esphome").namespace("smartevse_sensorbox")
+SmartEVSESensorBox = smartevse_ns.class_("SmartEVSESensorBox", cg.PollingComponent)
 
-smart_evse_sensorbox_ns = cg.esphome_ns.namespace("smartevse_sensorbox")
-SmartEVSESensorboxDeviceComponent = smart_evse_sensorbox_ns.class_("SmartEVSESensorbox", cg.Component)
+# Configuration keys
+CONF_CT_PHASE_A = "ct_phase_a"
+CONF_CT_PHASE_B = "ct_phase_b"
+CONF_CT_PHASE_C = "ct_phase_c"
+CONF_ADS_REF = "ads_ref"
+CONF_LINKY_POWER = "linky_power"
+CONF_LINKY_ENERGY = "linky_energy"
 
-CTWires = smart_evse_sensorbox_ns.enum("CT_WIRES")
-CT_WIRES = {
-    "4WIRE": 0,
-    "3WIRE": 2,
-}
+CONF_CT_GAIN_A = "ct_gain_a"
+CONF_CT_GAIN_B = "ct_gain_b"
+CONF_CT_GAIN_C = "ct_gain_c"
+CONF_CT_OFFSET_A = "ct_offset_a"
+CONF_CT_OFFSET_B = "ct_offset_b"
+CONF_CT_OFFSET_C = "ct_offset_c"
 
-CTRotation = smart_evse_sensorbox_ns.enum("CT_ROTATION")
-CT_ROTATION = {
-    "CW": 0,
-    "CCW": 1,
-}
+CONF_NOMINAL_VOLTAGE = "nominal_voltage"
+CONF_POWER_FACTOR = "power_factor"
+CONF_THREE_PHASE = "three_phase"
+CONF_PREFER_LINKY_POWER = "prefer_linky_power"
+CONF_AUTOCALIBRATION = "autocalibration"
+CONF_ADS_REF_VOLTAGE = "ads_ref_voltage"
 
-sensor_ns = cg.esphome_ns.namespace("sensor")
-SensorComponent = sensor_ns.class_("Sensor", cg.Component)
+CONFIG_SCHEMA = cv.Schema({
+    cv.GenerateID(): cv.declare_id(SmartEVSESensorBox),
 
-text_sensor_ns = cg.esphome_ns.namespace("text_sensor")
-TextSensorComponent = text_sensor_ns.class_("TextSensor", cg.Component)
+    cv.Required(CONF_CT_PHASE_A): cv.use_id(sensor.Sensor),
+    cv.Required(CONF_CT_PHASE_B): cv.use_id(sensor.Sensor),
+    cv.Required(CONF_CT_PHASE_C): cv.use_id(sensor.Sensor),
+    cv.Required(CONF_ADS_REF): cv.use_id(sensor.Sensor),
 
-DEPENDENCIES = ["modbus_server"]
+    cv.Optional(CONF_LINKY_POWER): cv.use_id(sensor.Sensor),
+    cv.Optional(CONF_LINKY_ENERGY): cv.use_id(sensor.Sensor),
 
-CONFIG_SCHEMA = (
-    cv.Schema(
-        {
-            cv.GenerateID(): cv.declare_id(SmartEVSESensorboxDeviceComponent),
-            cv.Optional(CONF_USE_CT_READINGS): cv.boolean,
-            cv.Optional(CONF_CT_WIRES, default="4WIRE"): cv.enum(
-                CT_WIRES, upper=True
-            ),
-            cv.Optional(CONF_CT_ROTATION, default="CW"): cv.enum(
-                CT_ROTATION, upper=True
-            ),
-            cv.Optional(CONF_P1_SENSORS): cv.Schema(
-                {
-                    cv.Required(CONF_P1_SENSOR_DSMR_VERSION): cv.use_id(TextSensorComponent),
-                    cv.Required(CONF_P1_SENSOR_POWER_CONSUMED_PHASE_1): cv.use_id(SensorComponent),
-                    cv.Required(CONF_P1_SENSOR_POWER_CONSUMED_PHASE_2): cv.use_id(SensorComponent),
-                    cv.Required(CONF_P1_SENSOR_POWER_CONSUMED_PHASE_3): cv.use_id(SensorComponent),
-                    cv.Required(CONF_P1_SENSOR_VOLTAGE_PHASE_1): cv.use_id(SensorComponent),
-                    cv.Required(CONF_P1_SENSOR_VOLTAGE_PHASE_2): cv.use_id(SensorComponent),
-                    cv.Required(CONF_P1_SENSOR_VOLTAGE_PHASE_3): cv.use_id(SensorComponent),
-                    cv.Optional(CONF_P1_SENSOR_POWER_PRODUCED_PHASE_1): cv.use_id(SensorComponent),
-                    cv.Optional(CONF_P1_SENSOR_POWER_PRODUCED_PHASE_2): cv.use_id(SensorComponent),
-                    cv.Optional(CONF_P1_SENSOR_POWER_PRODUCED_PHASE_3): cv.use_id(SensorComponent),
-                }
-            )
-        }
-    )
-    .extend(uart.UART_DEVICE_SCHEMA)
-    .extend(cv.COMPONENT_SCHEMA)
-)
+    cv.Optional(CONF_CT_GAIN_A, default=1.0): cv.float_,
+    cv.Optional(CONF_CT_GAIN_B, default=1.0): cv.float_,
+    cv.Optional(CONF_CT_GAIN_C, default=1.0): cv.float_,
+    cv.Optional(CONF_CT_OFFSET_A, default=0.0): cv.float_,
+    cv.Optional(CONF_CT_OFFSET_B, default=0.0): cv.float_,
+    cv.Optional(CONF_CT_OFFSET_C, default=0.0): cv.float_,
 
-MULTI_CONF = False
-CODEOWNERS = ["@synegic"]
+    cv.Optional(CONF_ADS_REF_VOLTAGE, default=1.0): cv.float_,
+    cv.Optional(CONF_AUTOCALIBRATION, default=True): cv.boolean,
 
+    cv.Optional(CONF_NOMINAL_VOLTAGE, default=230.0): cv.float_range(min=100.0, max=270.0),
+    cv.Optional(CONF_POWER_FACTOR, default=0.95): cv.float_range(min=0.0, max=1.0),
+    cv.Optional(CONF_THREE_PHASE, default=False): cv.boolean,
+    cv.Optional(CONF_PREFER_LINKY_POWER, default=True): cv.boolean,
+}).extend(cv.polling_component_schema("1s"))
 
 async def to_code(config):
-    id = config[CONF_ID]
-    sensorbox = cg.new_Pvariable(id)
+    var = cg.new_Pvariable(config[CONF_ID])
+    await cg.register_component(var, config)
 
-    uart = await cg.get_variable(config["uart_id"])
-    cg.add(sensorbox.set_uart_parent(uart))
+    # Inputs
+    ct_a = await cg.get_variable(config[CONF_CT_PHASE_A])
+    ct_b = await cg.get_variable(config[CONF_CT_PHASE_B])
+    ct_c = await cg.get_variable(config[CONF_CT_PHASE_C])
+    ads_ref = await cg.get_variable(config[CONF_ADS_REF])
 
-    cg.add(sensorbox.use_ct_readings(config[CONF_USE_CT_READINGS]))
-    cg.add(sensorbox.set_ct_rotation(config[CONF_CT_ROTATION]))
-    cg.add(sensorbox.set_ct_wire(config[CONF_CT_WIRES]))
+    cg.add(var.set_ct_phase_a_input(ct_a))
+    cg.add(var.set_ct_phase_b_input(ct_b))
+    cg.add(var.set_ct_phase_c_input(ct_c))
+    cg.add(var.set_ads_ref_input(ads_ref))
 
-    if CONF_P1_SENSORS in config:
-        conf_p1_sensors = config.get(CONF_P1_SENSORS)
+    if CONF_LINKY_POWER in config:
+        lp = await cg.get_variable(config[CONF_LINKY_POWER])
+        cg.add(var.set_linky_power_input(lp))
+    if CONF_LINKY_ENERGY in config:
+        le = await cg.get_variable(config[CONF_LINKY_ENERGY])
+        cg.add(var.set_linky_energy_input(le))
 
-        cg.add(sensorbox.set_p1_version_sensor(await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_DSMR_VERSION])))
+    # Calibration
+    cg.add(var.set_ct_gain_a(config[CONF_CT_GAIN_A]))
+    cg.add(var.set_ct_gain_b(config[CONF_CT_GAIN_B]))
+    cg.add(var.set_ct_gain_c(config[CONF_CT_GAIN_C]))
+    cg.add(var.set_ct_offset_a(config[CONF_CT_OFFSET_A]))
+    cg.add(var.set_ct_offset_b(config[CONF_CT_OFFSET_B]))
+    cg.add(var.set_ct_offset_c(config[CONF_CT_OFFSET_C]))
 
-        cg.add(sensorbox.add_p1_value_sensor(1, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_POWER_CONSUMED_PHASE_1])))
-        cg.add(sensorbox.add_p1_value_sensor(2, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_POWER_CONSUMED_PHASE_2])))
-        cg.add(sensorbox.add_p1_value_sensor(3, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_POWER_CONSUMED_PHASE_3])))
-        cg.add(sensorbox.add_p1_value_sensor(4, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_VOLTAGE_PHASE_1])))
-        cg.add(sensorbox.add_p1_value_sensor(5, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_VOLTAGE_PHASE_2])))
-        cg.add(sensorbox.add_p1_value_sensor(6, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_VOLTAGE_PHASE_3])))
+    cg.add(var.set_ads_ref_voltage(config[CONF_ADS_REF_VOLTAGE]))
+    cg.add(var.enable_autocalibration(config[CONF_AUTOCALIBRATION]))
 
-        if CONF_P1_SENSOR_POWER_PRODUCED_PHASE_1 in conf_p1_sensors:
-            cg.add(sensorbox.add_p1_value_sensor(7, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_POWER_PRODUCED_PHASE_1])))
+    # Power computation config
+    cg.add(var.set_nominal_voltage_phase(config[CONF_NOMINAL_VOLTAGE]))
+    cg.add(var.set_power_factor(config[CONF_POWER_FACTOR]))
+    cg.add(var.set_three_phase(config[CONF_THREE_PHASE]))
+    cg.add(var.set_prefer_linky_power(config[CONF_PREFER_LINKY_POWER]))
 
-        if CONF_P1_SENSOR_POWER_PRODUCED_PHASE_2 in conf_p1_sensors:
-            cg.add(sensorbox.add_p1_value_sensor(8, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_POWER_PRODUCED_PHASE_2])))
-
-        if CONF_P1_SENSOR_POWER_PRODUCED_PHASE_3 in conf_p1_sensors:
-            cg.add(sensorbox.add_p1_value_sensor(9, await cg.get_variable(conf_p1_sensors[CONF_P1_SENSOR_POWER_PRODUCED_PHASE_3])))
-
-
-    await cg.register_component(sensorbox, config)
-
-    return
+    # Outputs (sensors auto-créés)
+    await sensor.new_sensor(var.ct_phase_a_out)
+    await sensor.new_sensor(var.ct_phase_b_out)
+    await sensor.new_sensor(var.ct_phase_c_out)
+    await sensor.new_sensor(var.ct_total_current_out)
+    await sensor.new_sensor(var.ct_total_power_out)
+    await sensor.new_sensor(var.linky_power_out)
+    await sensor.new_sensor(var.linky_energy_out)
+    await sensor.new_sensor(var.prefer_ct_out)
