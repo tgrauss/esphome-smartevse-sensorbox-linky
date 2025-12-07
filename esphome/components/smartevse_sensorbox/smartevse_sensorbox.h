@@ -6,17 +6,18 @@
 namespace esphome {
     namespace smartevse_sensorbox {
 
+        // Classe principale : agrège CT + TIC
         class SmartEVSESensorBox : public PollingComponent {
         public:
             SmartEVSESensorBox();
 
-            // Inputs (ADS1115 channels)
+            // Entrées CT (ADS1115)
             void set_ct_phase_a_input(sensor::Sensor *s) { ct_a_in_ = s; }
             void set_ct_phase_b_input(sensor::Sensor *s) { ct_b_in_ = s; }
             void set_ct_phase_c_input(sensor::Sensor *s) { ct_c_in_ = s; }
             void set_ads_ref_input(sensor::Sensor *s) { ads_ref_in_ = s; }
 
-            // Inputs (Teleinfo sensors)
+            // Entrées TIC (Teleinfo)
             void set_linky_power_input(sensor::Sensor *s) { linky_power_in_ = s; }   // SINSTS
             void set_linky_energy_input(sensor::Sensor *s) { linky_energy_in_ = s; } // EAST
             void set_linky_current_l1(sensor::Sensor *s) { linky_current_l1_in_ = s; } // IRMS1
@@ -47,34 +48,34 @@ namespace esphome {
             void set_wire_mode(int w) { wire_mode_ = w; }
             void set_wifi_mode(int m) { wifi_mode_ = m; } // 0=disabled, 1=enabled, 2=portal
 
-            // Outputs (Sensorbox-V2 registers)
-            sensor::Sensor *ct_phase_a_out = new sensor::Sensor();       // 0x000E
-            sensor::Sensor *ct_phase_b_out = new sensor::Sensor();       // 0x0010
-            sensor::Sensor *ct_phase_c_out = new sensor::Sensor();       // 0x0012
+            // Sorties (SensorBox-V2 registers)
+            sensor::Sensor *ct_phase_a_out = new sensor::Sensor();
+            sensor::Sensor *ct_phase_b_out = new sensor::Sensor();
+            sensor::Sensor *ct_phase_c_out = new sensor::Sensor();
             sensor::Sensor *ct_total_current_out = new sensor::Sensor();
             sensor::Sensor *ct_total_power_out = new sensor::Sensor();
             sensor::Sensor *linky_power_out = new sensor::Sensor();
             sensor::Sensor *linky_energy_out = new sensor::Sensor();
             sensor::Sensor *prefer_ct_out = new sensor::Sensor();
 
-            // Extra registers for Sensorbox-V2 compatibility
-            sensor::Sensor *version_out = new sensor::Sensor();          // 0x0000
-            sensor::Sensor *dsmr_info_out = new sensor::Sensor();        // 0x0001
-            sensor::Sensor *voltage_l1_out = new sensor::Sensor();       // 0x0002
-            sensor::Sensor *voltage_l2_out = new sensor::Sensor();       // 0x0004
-            sensor::Sensor *voltage_l3_out = new sensor::Sensor();       // 0x0006
-            sensor::Sensor *p1_current_l1_out = new sensor::Sensor();    // 0x0008
-            sensor::Sensor *p1_current_l2_out = new sensor::Sensor();    // 0x000A
-            sensor::Sensor *p1_current_l3_out = new sensor::Sensor();    // 0x000C
-            sensor::Sensor *wifi_status_out = new sensor::Sensor();      // 0x0014
-            sensor::Sensor *time_hm_out = new sensor::Sensor();          // 0x0015
-            sensor::Sensor *time_md_out = new sensor::Sensor();          // 0x0016
-            sensor::Sensor *time_yw_out = new sensor::Sensor();          // 0x0017
-            sensor::Sensor *ip_out = new sensor::Sensor();               // 0x0018
-            sensor::Sensor *mac_out = new sensor::Sensor();              // 0x001A
-            sensor::Sensor *portal_pwd_out = new sensor::Sensor();       // 0x001C
-            sensor::Sensor *rotation_out = new sensor::Sensor();         // 0x0800
-            sensor::Sensor *wifi_mode_out = new sensor::Sensor();        // 0x0801
+            // Extra registers pour compatibilité SensorBox-V2
+            sensor::Sensor *version_out = new sensor::Sensor();
+            sensor::Sensor *dsmr_info_out = new sensor::Sensor();
+            sensor::Sensor *voltage_l1_out = new sensor::Sensor();
+            sensor::Sensor *voltage_l2_out = new sensor::Sensor();
+            sensor::Sensor *voltage_l3_out = new sensor::Sensor();
+            sensor::Sensor *p1_current_l1_out = new sensor::Sensor();
+            sensor::Sensor *p1_current_l2_out = new sensor::Sensor();
+            sensor::Sensor *p1_current_l3_out = new sensor::Sensor();
+            sensor::Sensor *wifi_status_out = new sensor::Sensor();
+            sensor::Sensor *time_hm_out = new sensor::Sensor();
+            sensor::Sensor *time_md_out = new sensor::Sensor();
+            sensor::Sensor *time_yw_out = new sensor::Sensor();
+            sensor::Sensor *ip_out = new sensor::Sensor();
+            sensor::Sensor *mac_out = new sensor::Sensor();
+            sensor::Sensor *portal_pwd_out = new sensor::Sensor();
+            sensor::Sensor *rotation_out = new sensor::Sensor();
+            sensor::Sensor *wifi_mode_out = new sensor::Sensor();
 
             void setup() override;
             void update() override;

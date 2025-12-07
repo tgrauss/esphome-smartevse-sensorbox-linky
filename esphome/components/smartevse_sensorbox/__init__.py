@@ -3,8 +3,13 @@ import esphome.config_validation as cv
 from esphome.components import sensor
 from esphome.const import CONF_ID
 
+# Namespace principal
 smartevse_ns = cg.global_ns.namespace("esphome").namespace("smartevse_sensorbox")
 SmartEVSESensorBox = smartevse_ns.class_("SmartEVSESensorBox", cg.PollingComponent)
+
+# Namespace pour le Modbus custom
+modbus_ns = cg.global_ns.namespace("esphome").namespace("smartevse_modbus")
+SmartEVSEModbusServer = modbus_ns.class_("SmartEVSEModbusServer", cg.Component)
 
 # Configuration keys
 CONF_CT_PHASE_A = "ct_phase_a"
@@ -13,14 +18,14 @@ CONF_CT_PHASE_C = "ct_phase_c"
 CONF_ADS_REF = "ads_ref"
 
 # TIC inputs
-CONF_LINKY_POWER = "linky_power"     # SINSTS
-CONF_LINKY_ENERGY = "linky_energy"   # EAST
-CONF_LINKY_CURRENT_L1 = "linky_current_l1"  # IRMS1
-CONF_LINKY_CURRENT_L2 = "linky_current_l2"  # IRMS2
-CONF_LINKY_CURRENT_L3 = "linky_current_l3"  # IRMS3
-CONF_LINKY_VOLTAGE_L1 = "linky_voltage_l1"  # URMS1
-CONF_LINKY_VOLTAGE_L2 = "linky_voltage_l2"  # URMS2
-CONF_LINKY_VOLTAGE_L3 = "linky_voltage_l3"  # URMS3
+CONF_LINKY_POWER = "linky_power"
+CONF_LINKY_ENERGY = "linky_energy"
+CONF_LINKY_CURRENT_L1 = "linky_current_l1"
+CONF_LINKY_CURRENT_L2 = "linky_current_l2"
+CONF_LINKY_CURRENT_L3 = "linky_current_l3"
+CONF_LINKY_VOLTAGE_L1 = "linky_voltage_l1"
+CONF_LINKY_VOLTAGE_L2 = "linky_voltage_l2"
+CONF_LINKY_VOLTAGE_L3 = "linky_voltage_l3"
 
 # Calibration
 CONF_CT_GAIN_A = "ct_gain_a"
@@ -40,7 +45,7 @@ CONF_ADS_REF_VOLTAGE = "ads_ref_voltage"
 # Configurable registers
 CONF_ROTATION = "rotation"
 CONF_WIRE_MODE = "wire_mode"
-CONF_WIFI_MODE = "wifi_mode"  # 0=disabled, 1=enabled, 2=portal
+CONF_WIFI_MODE = "wifi_mode"
 
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(SmartEVSESensorBox),
@@ -162,4 +167,6 @@ async def to_code(config):
     await sensor.new_sensor(var.voltage_l2_out)
     await sensor.new_sensor(var.voltage_l3_out)
     await sensor.new_sensor(var.p1_current_l1_out)
-    await sensor
+    await sensor.new_sensor(var.p1_current_l2_out)
+    await sensor.new_sensor(var.p1_current_l3_out)
+    await sensor.new_sensor(var

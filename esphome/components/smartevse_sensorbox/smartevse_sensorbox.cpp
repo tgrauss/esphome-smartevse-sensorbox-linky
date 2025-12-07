@@ -15,7 +15,7 @@ namespace esphome {
     }
 
     void SmartEVSESensorBox::update() {
-      // 1) Autocalibration using ADS reference
+      // 1) Autocalibration via ADS reference
       if (autocalibration_enabled_ && ads_ref_in_ && ads_ref_in_->has_state()) {
         const float measured = ads_ref_in_->state;
         if (!isnan(measured) && measured > 0.0f) {
@@ -27,7 +27,7 @@ namespace esphome {
         }
       }
 
-      // 2) Read and calibrate CTs
+      // 2) Lecture et calibration des CT
       float ia = NAN, ib = NAN, ic = NAN;
       if (ct_a_in_ && ct_a_in_->has_state()) ia = calibrate_(ct_a_in_->state, ct_gain_a_, ct_offset_a_);
       if (ct_b_in_ && ct_b_in_->has_state()) ib = calibrate_(ct_b_in_->state, ct_gain_b_, ct_offset_b_);
@@ -43,7 +43,7 @@ namespace esphome {
         ct_total_current_out->publish_state(i_total);
       }
 
-      // 3) Compute total power (CT-based)
+      // 3) Puissance totale calculée via CT
       float p_total_ct = NAN;
       if (!isnan(ia) && !isnan(ib) && !isnan(ic)) {
         if (three_phase_) {
@@ -54,7 +54,7 @@ namespace esphome {
         }
       }
 
-      // 4) Linky TIC passthrough
+      // 4) Données TIC Linky
       if (linky_power_in_ && linky_power_in_->has_state()) {
         linky_power_out->publish_state(linky_power_in_->state);
       }
@@ -86,39 +86,39 @@ namespace esphome {
       if (linky_voltage_l3_in_ && linky_voltage_l3_in_->has_state())
         voltage_l3_out->publish_state(linky_voltage_l3_in_->state);
 
-      // 7) Preference flag
+      // 7) Flag de préférence
       prefer_ct_out->publish_state(prefer_linky_power_ ? 0.0f : 1.0f);
 
-      // 8) Extra registers
+      // 8) Registres supplémentaires
       version_out->publish_state(0x0114); // Exemple version
       dsmr_info_out->publish_state(0x3283); // Exemple DSMR info
 
-      // WiFi status based on wifi_mode parameter
+      // WiFi status basé sur wifi_mode
       if (wifi_mode_ == 0) {
-        wifi_status_out->publish_state(0); // WiFi désactivé
+        wifi_status_out->publish_state(0);
         ip_out->publish_state(0);
         mac_out->publish_state(0);
         portal_pwd_out->publish_state(0);
       } else if (wifi_mode_ == 1) {
-        wifi_status_out->publish_state(1); // WiFi actif
-        ip_out->publish_state(0xC0A80101); // Exemple IP 192.168.1.1
-        mac_out->publish_state(0x112233445566); // Exemple MAC
-        portal_pwd_out->publish_state(1234); // Exemple mot de passe portail
+        wifi_status_out->publish_state(1);
+        ip_out->publish_state(0xC0A80101); // 192.168.1.1
+        mac_out->publish_state(0x112233445566);
+        portal_pwd_out->publish_state(1234);
       } else if (wifi_mode_ == 2) {
-        wifi_status_out->publish_state(2); // Mode portail
-        ip_out->publish_state(0xC0A801FE); // Exemple IP portail
-        mac_out->publish_state(0xAABBCCDDEEFF); // Exemple MAC portail
-        portal_pwd_out->publish_state(5678); // Exemple mot de passe portail
+        wifi_status_out->publish_state(2);
+        ip_out->publish_state(0xC0A801FE); // 192.168.1.254
+        mac_out->publish_state(0xAABBCCDDEEFF);
+        portal_pwd_out->publish_state(5678);
       }
 
-      // Rotation + wire_mode published in 0x0800
+      // Rotation + wire_mode (0x0800)
       int reg0800 = (wire_mode_ << 1) | (rotation_ & 0x01);
       rotation_out->publish_state(reg0800);
 
-      // WiFi mode register (0x0801)
+      // WiFi mode (0x0801)
       wifi_mode_out->publish_state(wifi_mode_);
 
-      // 9) Time registers
+      // 9) Horodatage
       std::time_t t = std::time(nullptr);
       std::tm *tm = std::localtime(&t);
       if (tm) {
