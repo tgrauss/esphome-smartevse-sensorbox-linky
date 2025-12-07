@@ -28,6 +28,10 @@ CONF_PREFER_LINKY_POWER = "prefer_linky_power"
 CONF_AUTOCALIBRATION = "autocalibration"
 CONF_ADS_REF_VOLTAGE = "ads_ref_voltage"
 
+# Nouveaux paramètres configurables
+CONF_ROTATION = "rotation"
+CONF_WIRE_MODE = "wire_mode"
+
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(SmartEVSESensorBox),
 
@@ -53,6 +57,10 @@ CONFIG_SCHEMA = cv.Schema({
     cv.Optional(CONF_POWER_FACTOR, default=0.95): cv.float_range(min=0.0, max=1.0),
     cv.Optional(CONF_THREE_PHASE, default=False): cv.boolean,
     cv.Optional(CONF_PREFER_LINKY_POWER, default=True): cv.boolean,
+
+    # Nouveaux paramètres
+    cv.Optional(CONF_ROTATION, default=0): cv.int_range(min=0, max=1),   # 0 = droite, 1 = gauche
+    cv.Optional(CONF_WIRE_MODE, default=1): cv.int_range(min=0, max=1),  # 0 = 4 fils, 1 = 3 fils (par défaut SCT013)
 }).extend(cv.polling_component_schema("1s"))
 
 async def to_code(config):
@@ -94,7 +102,11 @@ async def to_code(config):
     cg.add(var.set_three_phase(config[CONF_THREE_PHASE]))
     cg.add(var.set_prefer_linky_power(config[CONF_PREFER_LINKY_POWER]))
 
-    # Outputs (create sensors)
+    # Nouveaux paramètres rotation / wire_mode
+    cg.add(var.set_rotation(config[CONF_ROTATION]))
+    cg.add(var.set_wire_mode(config[CONF_WIRE_MODE]))
+
+    # Outputs (sensors auto-créés)
     await sensor.new_sensor(var.ct_phase_a_out)
     await sensor.new_sensor(var.ct_phase_b_out)
     await sensor.new_sensor(var.ct_phase_c_out)
@@ -103,3 +115,22 @@ async def to_code(config):
     await sensor.new_sensor(var.linky_power_out)
     await sensor.new_sensor(var.linky_energy_out)
     await sensor.new_sensor(var.prefer_ct_out)
+
+    # Extra registers for Sensorbox-V2 compatibility
+    await sensor.new_sensor(var.version_out)
+    await sensor.new_sensor(var.dsmr_info_out)
+    await sensor.new_sensor(var.voltage_l1_out)
+    await sensor.new_sensor(var.voltage_l2_out)
+    await sensor.new_sensor(var.voltage_l3_out)
+    await sensor.new_sensor(var.p1_current_l1_out)
+    await sensor.new_sensor(var.p1_current_l2_out)
+    await sensor.new_sensor(var.p1_current_l3_out)
+    await sensor.new_sensor(var.wifi_status_out)
+    await sensor.new_sensor(var.time_hm_out)
+    await sensor.new_sensor(var.time_md_out)
+    await sensor.new_sensor(var.time_yw_out)
+    await sensor.new_sensor(var.ip_out)
+    await sensor.new_sensor(var.mac_out)
+    await sensor.new_sensor(var.portal_pwd_out)
+    await sensor.new_sensor(var.rotation_out)
+    await sensor.new_sensor(var.wifi_mode_out)

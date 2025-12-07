@@ -16,10 +16,10 @@ namespace esphome {
             void set_ct_phase_c_input(sensor::Sensor *s) { ct_c_in_ = s; }
             void set_ads_ref_input(sensor::Sensor *s) { ads_ref_in_ = s; }
 
-            void set_linky_power_input(sensor::Sensor *s) { linky_power_in_ = s; }   // W
-            void set_linky_energy_input(sensor::Sensor *s) { linky_energy_in_ = s; } // Wh
+            void set_linky_power_input(sensor::Sensor *s) { linky_power_in_ = s; }
+            void set_linky_energy_input(sensor::Sensor *s) { linky_energy_in_ = s; }
 
-            // Calibration (per-phase, applied to raw CT readings)
+            // Calibration
             void set_ct_gain_a(float g) { ct_gain_a_ = g; }
             void set_ct_gain_b(float g) { ct_gain_b_ = g; }
             void set_ct_gain_c(float g) { ct_gain_c_ = g; }
@@ -27,26 +27,46 @@ namespace esphome {
             void set_ct_offset_b(float o) { ct_offset_b_ = o; }
             void set_ct_offset_c(float o) { ct_offset_c_ = o; }
 
-            // ADS reference for autocalibration (e.g., ADS A0 wired to 1.0 V)
             void set_ads_ref_voltage(float v) { ads_ref_voltage_ = v; }
             void enable_autocalibration(bool e) { autocalibration_enabled_ = e; }
 
-            // Power computation config
-            void set_nominal_voltage_phase(float v) { nominal_voltage_phase_ = v; } // per-phase nominal voltage
+            void set_nominal_voltage_phase(float v) { nominal_voltage_phase_ = v; }
             void set_power_factor(float pf) { power_factor_ = pf; }
-            void set_three_phase(bool t) { three_phase_ = t; } // tri-phasé approximation
+            void set_three_phase(bool t) { three_phase_ = t; }
             void set_prefer_linky_power(bool p) { prefer_linky_power_ = p; }
-            bool get_prefer_linky_power() const { return prefer_linky_power_; }
 
-            // Outputs (publish to HA, can be mapped to Modbus server)
-            sensor::Sensor *ct_phase_a_out = new sensor::Sensor();       // A
-            sensor::Sensor *ct_phase_b_out = new sensor::Sensor();       // A
-            sensor::Sensor *ct_phase_c_out = new sensor::Sensor();       // A
-            sensor::Sensor *ct_total_current_out = new sensor::Sensor(); // A
-            sensor::Sensor *ct_total_power_out = new sensor::Sensor();   // W (approx or Linky)
-            sensor::Sensor *linky_power_out = new sensor::Sensor();      // W
-            sensor::Sensor *linky_energy_out = new sensor::Sensor();     // Wh
-            sensor::Sensor *prefer_ct_out = new sensor::Sensor();        // 1 = CT, 0 = Linky
+            // Nouveaux paramètres configurables
+            void set_rotation(int r) { rotation_ = r; }
+            void set_wire_mode(int w) { wire_mode_ = w; }
+
+            // Outputs (Sensorbox-V2 registers)
+            sensor::Sensor *ct_phase_a_out = new sensor::Sensor();       // 0x000E
+            sensor::Sensor *ct_phase_b_out = new sensor::Sensor();       // 0x0010
+            sensor::Sensor *ct_phase_c_out = new sensor::Sensor();       // 0x0012
+            sensor::Sensor *ct_total_current_out = new sensor::Sensor();
+            sensor::Sensor *ct_total_power_out = new sensor::Sensor();
+            sensor::Sensor *linky_power_out = new sensor::Sensor();
+            sensor::Sensor *linky_energy_out = new sensor::Sensor();
+            sensor::Sensor *prefer_ct_out = new sensor::Sensor();
+
+            // Extra registers for Sensorbox-V2 compatibility
+            sensor::Sensor *version_out = new sensor::Sensor();          // 0x0000
+            sensor::Sensor *dsmr_info_out = new sensor::Sensor();        // 0x0001
+            sensor::Sensor *voltage_l1_out = new sensor::Sensor();       // 0x0002
+            sensor::Sensor *voltage_l2_out = new sensor::Sensor();       // 0x0004
+            sensor::Sensor *voltage_l3_out = new sensor::Sensor();       // 0x0006
+            sensor::Sensor *p1_current_l1_out = new sensor::Sensor();    // 0x0008
+            sensor::Sensor *p1_current_l2_out = new sensor::Sensor();    // 0x000A
+            sensor::Sensor *p1_current_l3_out = new sensor::Sensor();    // 0x000C
+            sensor::Sensor *wifi_status_out = new sensor::Sensor();      // 0x0014
+            sensor::Sensor *time_hm_out = new sensor::Sensor();          // 0x0015
+            sensor::Sensor *time_md_out = new sensor::Sensor();          // 0x0016
+            sensor::Sensor *time_yw_out = new sensor::Sensor();          // 0x0017
+            sensor::Sensor *ip_out = new sensor::Sensor();               // 0x0018
+            sensor::Sensor *mac_out = new sensor::Sensor();              // 0x001A
+            sensor::Sensor *portal_pwd_out = new sensor::Sensor();       // 0x001C
+            sensor::Sensor *rotation_out = new sensor::Sensor();         // 0x0800
+            sensor::Sensor *wifi_mode_out = new sensor::Sensor();        // 0x0801
 
             void setup() override;
             void update() override;
@@ -68,19 +88,19 @@ namespace esphome {
             float ct_offset_b_{0.0f};
             float ct_offset_c_{0.0f};
 
-            // Autocalibration reference
             float ads_ref_voltage_{1.0f};
             bool autocalibration_enabled_{true};
 
-            // Power computation
             float nominal_voltage_phase_{230.0f};
             float power_factor_{0.95f};
             bool three_phase_{false};
             bool prefer_linky_power_{true};
 
-            // Helpers
+            // Nouveaux paramètres
+            int rotation_{0};   // 0 = droite, 1 = gauche
+            int wire_mode_{1};  // 0 = 4 fils, 1 = 3 fils (par défaut SCT013)
+
             inline float calibrate_(float raw, float gain, float offset) const { return raw * gain + offset; }
-            inline bool has_linky_power_() const { return linky_power_in_ && linky_power_in_->has_state(); }
         };
 
     }  // namespace smartevse_sensorbox

@@ -1,6 +1,7 @@
 #include "smartevse_sensorbox.h"
 #include "esphome/core/log.h"
 #include <math.h>
+#include <ctime>
 
 namespace esphome {
   namespace smartevse_sensorbox {
@@ -10,27 +11,19 @@ namespace esphome {
     SmartEVSESensorBox::SmartEVSESensorBox() : PollingComponent(1000) {}
 
     void SmartEVSESensorBox::setup() {
-      ESP_LOGI(TAG, "Setup: Vphase=%.1fV, PF=%.2f, three_phase=%s, prefer_linky_power=%s, autocalibration=%s (ref=%.3fV)",
-               nominal_voltage_phase_, power_factor_,
-               three_phase_ ? "true" : "false",
-               prefer_linky_power_ ? "true" : "false",
-               autocalibration_enabled_ ? "true" : "false",
-               ads_ref_voltage_);
+      ESP_LOGI(TAG, "SmartEVSE SensorBox setup complete");
     }
 
     void SmartEVSESensorBox::update() {
-      // 1) Autocalibration using ADS reference (e.g., ADS A0 = 1.0V)
+      // 1) Autocalibration using ADS reference
       if (autocalibration_enabled_ && ads_ref_in_ && ads_ref_in_->has_state()) {
         const float measured = ads_ref_in_->state;
         if (!isnan(measured) && measured > 0.0f) {
           const float correction = ads_ref_voltage_ / measured;
-          // Apply same correction to all CT gains
           ct_gain_a_ *= correction;
           ct_gain_b_ *= correction;
           ct_gain_c_ *= correction;
-          ESP_LOGI(TAG, "Autocalibration: measured=%.3fV expected=%.3fV correction=%.5f", measured, ads_ref_voltage_, correction);
-        } else {
-          ESP_LOGW(TAG, "Autocalibration skipped: invalid ADS ref reading");
+          ESP_LOGI(TAG, "Autocalibration applied: correction=%.5f", correction);
         }
       }
 
@@ -48,46 +41,72 @@ namespace esphome {
       if (!isnan(ia) && !isnan(ib) && !isnan(ic)) {
         i_total = ia + ib + ic;
         ct_total_current_out->publish_state(i_total);
-      } else {
-        ct_total_current_out->publish_state(NAN);
       }
 
-      // 3) Compute total power (from CTs or prefer Linky)
+      // 3) Compute total power
       float p_total_ct = NAN;
       if (!isnan(ia) && !isnan(ib) && !isnan(ic)) {
         if (three_phase_) {
-          // Simple 3-phase approximation: P ≈ sqrt(3) * Vphase * Iavg * PF
           const float i_avg = (ia + ib + ic) / 3.0f;
           p_total_ct = sqrtf(3.0f) * nominal_voltage_phase_ * i_avg * power_factor_;
         } else {
-          // Single-phase approximation: P ≈ (Ia+Ib+Ic) * Vphase * PF
           p_total_ct = (ia + ib + ic) * nominal_voltage_phase_ * power_factor_;
         }
       }
 
       float p_out = NAN;
-      if (prefer_linky_power_ && has_linky_power_()) {
+      if (prefer_linky_power_ && linky_power_in_ && linky_power_in_->has_state()) {
         p_out = linky_power_in_->state;
       } else {
         p_out = p_total_ct;
       }
       ct_total_power_out->publish_state(p_out);
 
-      // 4) Linky passthrough (power, energy)
+      // 4) Linky passthrough
       if (linky_power_in_) {
         linky_power_out->publish_state(linky_power_in_->has_state() ? linky_power_in_->state : NAN);
-      } else {
-        linky_power_out->publish_state(NAN);
       }
-
       if (linky_energy_in_) {
         linky_energy_out->publish_state(linky_energy_in_->has_state() ? linky_energy_in_->state : NAN);
-      } else {
-        linky_energy_out->publish_state(NAN);
       }
 
-      // 5) Publish source preference (1 = CT, 0 = Linky)
+      // 5) Preference flag
       prefer_ct_out->publish_state(prefer_linky_power_ ? 0.0f : 1.0f);
+
+      // 6) Extra registers for Sensorbox-V2
+      version_out->publish_state(0x0114); // Example version
+      dsmr_info_out->publish_state(0x3283); // Example DSMR info
+
+      voltage_l1_out->publish_state(nominal_voltage_phase_);
+      voltage_l2_out->publish_state(nominal_voltage_phase_);
+      voltage_l3_out->publish_state(nominal_voltage_phase_);
+
+      p1_current_l1_out->publish_state(NAN); // Not connected
+      p1_current_l2_out->publish_state(NAN);
+      p1_current_l3_out->publish_state(NAN);
+
+      wifi_status_out->publish_state(1); // Example: WiFi enabled
+      wifi_mode_out->publish_state(1);   // Example: WiFi mode enabled
+
+      // Rotation + wire_mode published in 0x0800
+      int reg0800 = (wire_mode_ << 1) | (rotation_ & 0x01);
+      rotation_out->publish_state(reg0800);
+
+      // Time registers
+      std::time_t t = std::time(nullptr);
+      std::tm *tm = std::localtime(&t);
+      if (tm) {
+        int hm = (tm->tm_hour << 8) | tm->tm_min;
+        int md = ((tm->tm_mon + 1) << 8) | tm->tm_mday;
+        int yw = ((1900 + tm->tm_year) << 8) | tm->tm_wday;
+        time_hm_out->publish_state(hm);
+        time_md_out->publish_state(md);
+        time_yw_out->publish_state(yw);
+      }
+
+      ip_out->publish_state(0);        // Placeholder
+      mac_out->publish_state(0);       // Placeholder
+      portal_pwd_out->publish_state(0);// Placeholder
     }
 
   }  // namespace smartevse_sensorbox

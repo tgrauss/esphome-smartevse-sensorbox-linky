@@ -1,76 +1,49 @@
-SmartEVSE SensorBox Linky
-=========================
+SmartEVSE SensorBox Linky (ESP32-S3)
+====================================
 
 Ce projet est une version modifiée de la SensorBox SmartEVSE pour ESPHome.
 Il permet de remplacer le matériel de la sensorbox d’origine par :
 
-- 3 sondes de courant (CT) connectées via un ADS1115 (entrées A1, A2, A3).
-- Une entrée de référence 1 V (A0) utilisée pour l’autocalibration des CT.
-- Un compteur Linky connecté en Modbus sur GPIO44.
+- 3 sondes de courant SCT013 (100A/50mA) connectées via un ADS1115 :
+  - A0 : référence 1 V
+  - A1 : Phase 1
+  - A2 : Phase 2
+  - A3 : Phase 3
+- Un compteur Linky connecté en Modbus sur GPIO44 (RX de l’ESP32-S3).
+- Un bus Modbus SmartEVSE (où SmartEVSE est maître).
+- Un bus Modbus esclave supplémentaire pour communiquer avec d’autres ESPHome.
+- Exposition des valeurs à Home Assistant via API ESPHome.
 
-Toutes les informations (CT et Linky) sont :
-- Disponibles dans Home Assistant via les sensors ESPHome.
-- Exposées en continu sur un bus Modbus esclave, pour être lues par un autre ESPHome master ou par le SmartEVSE.
+Compatibilité SmartEVSE
+-----------------------
+Le composant expose **tous les registres Modbus de la Sensorbox‑V2** :
+- Adresse esclave : 0x0A, vitesse 9600 bps.
+- Input Registers (FC=04) : version, DSMR info, tensions, courants CT, WiFi, heure/date, IP, MAC.
+- Holding Registers (FC=06) : rotation champ / config 3‑4 fils, mode WiFi.
 
-Fonctionnalités principales
----------------------------
-- Lecture des 3 sondes CT avec calibration (gain, offset).
-- Autocalibration automatique grâce à la référence 1 V sur A0.
-- Lecture des registres Modbus du compteur Linky (puissance, énergie).
-- Calcul de la puissance totale (mono ou tri, avec facteur de puissance configurable).
-- Préférence configurable : utiliser la puissance Linky ou les CT comme source principale.
-- Exposition simultanée des données vers Home Assistant et Modbus esclave.
+---
 
-Exemple de configuration YAML
------------------------------
+## Exemple YAML pour ESP32‑S3‑Zero
 
 esphome:
-  name: smartevse-sensorbox-linky
+  name: smartevse-sensorbox-zero
   platform: ESP32
-  board: esp32dev
+  board: esp32-s3-devkitc-1
 
+# I²C pour ADS1115
 i2c:
-  sda: GPIO21
-  scl: GPIO22
+  sda: GPIO6
+  scl: GPIO5
   scan: true
 
 ads1115:
   - id: ads1115_ct
     address: 0x48
 
-sensor:
-  - platform: ads1115
-    id: ct_a_in
-    name: "Raw CT Phase A"
-    multiplexer: A1_GND
-    gain: 4.096
-    update_interval: 1s
-
-  - platform: ads1115
-    id: ct_b_in
-    name: "Raw CT Phase B"
-    multiplexer: A2_GND
-    gain: 4.096
-    update_interval: 1s
-
-  - platform: ads1115
-    id: ct_c_in
-    name: "Raw CT Phase C"
-    multiplexer: A3_GND
-    gain: 4.096
-    update_interval: 1s
-
-  - platform: ads1115
-    id: ads_ref_in
-    name: "ADS Reference 1V"
-    multiplexer: A0_GND
-    gain: 4.096
-    update_interval: 1s
-
+# UART pour Linky (maître Modbus, lecture sur GPIO44)
 uart:
   id: uart_linky
-  tx_pin: GPIO44
-  rx_pin: GPIO43
+  rx_pin: GPIO44
   baud_rate: 9600
   stop_bits: 1
 
@@ -82,88 +55,110 @@ modbus_controller:
   - id: linky_ctrl
     address: 1
     modbus_id: modbus_linky
-    update_interval: 5s
+    update_interval: 2s
 
-sensor:
-  - platform: modbus_controller
-    modbus_controller_id: linky_ctrl
-    id: linky_power_in
-    name: "Raw Linky Power"
-    address: 0x000C   # à confirmer selon table originale
-    register_type: holding
-    value_type: U_WORD
-    unit_of_measurement: "W"
-
-  - platform: modbus_controller
-    modbus_controller_id: linky_ctrl
-    id: linky_energy_in
-    name: "Raw Linky Energy"
-    address: 0x000E   # à confirmer selon table originale
-    register_type: holding
-    value_type: U_DWORD
-    unit_of_measurement: "Wh"
-
-smartevse_sensorbox:
-  ct_phase_a: ct_a_in
-  ct_phase_b: ct_b_in
-  ct_phase_c: ct_c_in
-  ads_ref: ads_ref_in
-  linky_power: linky_power_in
-  linky_energy: linky_energy_in
-
-  ct_gain_a: 1.0
-  ct_gain_b: 1.0
-  ct_gain_c: 1.0
-  ct_offset_a: 0.0
-  ct_offset_b: 0.0
-  ct_offset_c: 0.0
-
-  ads_ref_voltage: 1.0
-  autocalibration: true
-
-  nominal_voltage: 230
-  power_factor: 0.95
-  three_phase: false
-  prefer_linky_power: true
-  update_interval: 1s
-
+# UART pour SmartEVSE (esclave Modbus)
 uart:
-  id: uart_modbus_slave
-  tx_pin: GPIO18
-  rx_pin: GPIO19
+  id: uart_smartevse
+  tx_pin: GPIO11
+  rx_pin: GPIO13
   baud_rate: 9600
 
 modbus_server:
-  id: mb_slave
-  uart_id: uart_modbus_slave
-  holding_registers:
-    - address: 0      # CT Phase A
-      sensor_id: smartevse_sensorbox.ct_phase_a_out
-    - address: 1      # CT Phase B
-      sensor_id: smartevse_sensorbox.ct_phase_b_out
-    - address: 2      # CT Phase C
-      sensor_id: smartevse_sensorbox.ct_phase_c_out
-    - address: 3      # Total Power
-      sensor_id: smartevse_sensorbox.ct_total_power_out
-    - address: 4      # Total Current
-      sensor_id: smartevse_sensorbox.ct_total_current_out
-    - address: 5      # Preference CT/Linky
-      sensor_id: smartevse_sensorbox.prefer_ct_out
-    - address: 6      # Linky Power
-      sensor_id: smartevse_sensorbox.linky_power_out
-    - address: 7      # Linky Energy
-      sensor_id: smartevse_sensorbox.linky_energy_out
+  id: mb_smartevse
+  uart_id: uart_smartevse
+  enable_pin: GPIO12
+
+# UART pour Modbus esclave (autres ESPHome)
+uart:
+  id: uart_esphome
+  tx_pin: GPIO7
+  rx_pin: GPIO9
+  baud_rate: 9600
+
+modbus_server:
+  id: mb_esphome
+  uart_id: uart_esphome
+  enable_pin: GPIO8
+
+---
+
+## Exemple YAML pour ESP32‑S3‑ETH (Ethernet PoE)
+
+esphome:
+  name: smartevse-sensorbox-eth
+  platform: ESP32
+  board: esp32-s3-devkitc-1
+
+# I²C pour ADS1115
+i2c:
+  sda: GPIO1
+  scl: GPIO2
+  scan: true
+
+ads1115:
+  - id: ads1115_ct
+    address: 0x48
+
+# UART pour Linky (maître Modbus, lecture sur GPIO44)
+uart:
+  id: uart_linky
+  rx_pin: GPIO44
+  baud_rate: 9600
+  stop_bits: 1
+
+modbus:
+  id: modbus_linky
+  uart_id: uart_linky
+
+modbus_controller:
+  - id: linky_ctrl
+    address: 1
+    modbus_id: modbus_linky
+    update_interval: 2s
+
+# UART pour SmartEVSE (esclave Modbus)
+uart:
+  id: uart_smartevse
+  tx_pin: GPIO40
+  rx_pin: GPIO42
+  baud_rate: 9600
+
+modbus_server:
+  id: mb_smartevse
+  uart_id: uart_smartevse
+  enable_pin: GPIO41
+
+# UART pour Modbus esclave (autres ESPHome)
+uart:
+  id: uart_esphome
+  tx_pin: GPIO37
+  rx_pin: GPIO39
+  baud_rate: 9600
+
+modbus_server:
+  id: mb_esphome
+  uart_id: uart_esphome
+  enable_pin: GPIO38
+
+# Désactiver le WiFi si Ethernet PoE est utilisé
+wifi:
+  disabled: true
+
+---
 
 Notes
 -----
-- Les adresses Modbus ci-dessus doivent être confirmées et alignées avec la table officielle du projet original.
-- La préférence CT/Linky est exposée en tant que sensor (prefer_ct_out) :
-  - 1 = CT utilisé comme source principale.
-  - 0 = Linky utilisé comme source principale.
-- L’autocalibration ajuste automatiquement les gains des CT en fonction de la référence 1 V.
-- Les valeurs sont rafraîchies toutes les secondes.
+- Les pins sont adaptés aux deux variantes matérielles : **ESP32‑S3‑Zero** et **ESP32‑S3‑ETH**.  
+- Sur le bus SmartEVSE, c’est bien **SmartEVSE qui est maître**, ton ESP32‑S3 est esclave.  
+- Sur le bus Linky, ton ESP32‑S3 est maître pour interroger le compteur.  
+- Sur le bus esclave pour autres ESPHome, ton ESP32‑S3 est esclave.  
+- Les CT calibrés sont exposés sur 0x000E, 0x0010, 0x0012.  
+- Les autres registres (version, DSMR, tensions, WiFi, etc.) sont également disponibles.  
+- Les paramètres `rotation` et `wire_mode` sont configurables via YAML.  
+- Par défaut : **rotation droite (0)** et **3 fils (1)** pour SCT013.
 
 Licence
 -------
-Ce projet est basé sur ESPHome et adapté pour SmartEVSE.
+Ce projet est basé sur ESPHome et adapté pour SmartEVSE.  
 Licence : MIT.
