@@ -1,7 +1,11 @@
 esphome:
-  name: smartevse-sensorbox
-  platform: ESP32
+  name: sensorbox
+  friendly_name: sensorbox
+
+esp32:
   board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
 
 # -------------------------------
 # External components
@@ -10,6 +14,44 @@ external_components:
   - source: github://tgrauss/esphome-smartevse-sensorbox-linky
     components: [smartevse_sensorbox, smartevse_modbus, modbus_server]
     refresh: 0s
+
+logger:
+  level: NONE
+  baud_rate: 0
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  output_power: 8.5
+
+  ap:
+    ssid: !secret ap_ssid
+    password: !secret ap_password
+
+captive_portal:
+
+api:
+  # Don't reboot if the HomeAssistant connection times out (we can do just fine without it)
+  reboot_timeout: 0s
+  batch_delay: 50ms
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+web_server:
+  port: 80
+
+mdns:
+  disabled: false
+
+time:
+  - platform: sntp
+    timezone: Europe/Paris
+    id: my_time
 
 # -------------------------------
 # I²C pour ADS1115 (CT)
@@ -168,3 +210,14 @@ smartevse_modbus:
   modbus_server_id: mb_esphome
   sensorbox_id: sensorbox
   profile: linky_modbus
+
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Level"
+    update_interval: 60s
+
+switch:
+  - platform: restart
+    name: "Restart"
+
