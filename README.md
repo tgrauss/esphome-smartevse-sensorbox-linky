@@ -81,6 +81,23 @@ modbus_server:
   uart_id: uart_esphome
   enable_pin: GPIO8
 
+smartevse_sensorbox:
+  ct_phase_a: ct_a_in
+  ct_phase_b: ct_b_in
+  ct_phase_c: ct_c_in
+  ads_ref: ads_ref_in
+  linky_power: linky_power_in
+  linky_energy: linky_energy_in
+  nominal_voltage: 230
+  power_factor: 0.95
+  three_phase: true
+  prefer_linky_power: true
+  autocalibration: true
+  rotation: 0
+  wire_mode: 1
+  wifi_enabled: true
+  update_interval: 1s
+
 ---
 
 ## Exemple YAML pour ESP32‑S3‑ETH (Ethernet PoE)
@@ -141,9 +158,22 @@ modbus_server:
   uart_id: uart_esphome
   enable_pin: GPIO38
 
-# Désactiver le WiFi si Ethernet PoE est utilisé
-wifi:
-  disabled: true
+smartevse_sensorbox:
+  ct_phase_a: ct_a_in
+  ct_phase_b: ct_b_in
+  ct_phase_c: ct_c_in
+  ads_ref: ads_ref_in
+  linky_power: linky_power_in
+  linky_energy: linky_energy_in
+  nominal_voltage: 230
+  power_factor: 0.95
+  three_phase: true
+  prefer_linky_power: true
+  autocalibration: true
+  rotation: 0
+  wire_mode: 1
+  wifi_enabled: false   # Désactiver le WiFi si Ethernet PoE est utilisé
+  update_interval: 1s
 
 ---
 
@@ -155,8 +185,8 @@ Notes
 - Sur le bus esclave pour autres ESPHome, ton ESP32‑S3 est esclave.  
 - Les CT calibrés sont exposés sur 0x000E, 0x0010, 0x0012.  
 - Les autres registres (version, DSMR, tensions, WiFi, etc.) sont également disponibles.  
-- Les paramètres `rotation` et `wire_mode` sont configurables via YAML.  
-- Par défaut : **rotation droite (0)** et **3 fils (1)** pour SCT013.
+- Les paramètres `rotation`, `wire_mode` et `wifi_enabled` sont configurables via YAML.  
+- Par défaut : **rotation droite (0)**, **3 fils (1)** pour SCT013, et **WiFi activé**.
 
 Licence
 -------

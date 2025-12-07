@@ -31,6 +31,7 @@ CONF_ADS_REF_VOLTAGE = "ads_ref_voltage"
 # Nouveaux paramètres configurables
 CONF_ROTATION = "rotation"
 CONF_WIRE_MODE = "wire_mode"
+CONF_WIFI_ENABLED = "wifi_enabled"
 
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(SmartEVSESensorBox),
@@ -60,7 +61,8 @@ CONFIG_SCHEMA = cv.Schema({
 
     # Nouveaux paramètres
     cv.Optional(CONF_ROTATION, default=0): cv.int_range(min=0, max=1),   # 0 = droite, 1 = gauche
-    cv.Optional(CONF_WIRE_MODE, default=1): cv.int_range(min=0, max=1),  # 0 = 4 fils, 1 = 3 fils (par défaut SCT013)
+    cv.Optional(CONF_WIRE_MODE, default=1): cv.int_range(min=0, max=1),  # 0 = 4 fils, 1 = 3 fils
+    cv.Optional(CONF_WIFI_ENABLED, default=True): cv.boolean,            # true = WiFi actif, false = désactivé
 }).extend(cv.polling_component_schema("1s"))
 
 async def to_code(config):
@@ -102,9 +104,10 @@ async def to_code(config):
     cg.add(var.set_three_phase(config[CONF_THREE_PHASE]))
     cg.add(var.set_prefer_linky_power(config[CONF_PREFER_LINKY_POWER]))
 
-    # Nouveaux paramètres rotation / wire_mode
+    # Nouveaux paramètres rotation / wire_mode / wifi_enabled
     cg.add(var.set_rotation(config[CONF_ROTATION]))
     cg.add(var.set_wire_mode(config[CONF_WIRE_MODE]))
+    cg.add(var.set_wifi_enabled(config[CONF_WIFI_ENABLED]))
 
     # Outputs (sensors auto-créés)
     await sensor.new_sensor(var.ct_phase_a_out)

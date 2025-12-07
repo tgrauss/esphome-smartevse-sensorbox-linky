@@ -85,12 +85,25 @@ namespace esphome {
       p1_current_l2_out->publish_state(NAN);
       p1_current_l3_out->publish_state(NAN);
 
-      wifi_status_out->publish_state(1); // Example: WiFi enabled
-      wifi_mode_out->publish_state(1);   // Example: WiFi mode enabled
+      // WiFi status based on wifi_enabled parameter
+      if (wifi_enabled_) {
+        wifi_status_out->publish_state(1); // WiFi actif
+        ip_out->publish_state(0xC0A80101); // Exemple IP 192.168.1.1
+        mac_out->publish_state(0x112233445566); // Exemple MAC
+        portal_pwd_out->publish_state(1234); // Exemple mot de passe portail
+      } else {
+        wifi_status_out->publish_state(0); // WiFi désactivé
+        ip_out->publish_state(0);
+        mac_out->publish_state(0);
+        portal_pwd_out->publish_state(0);
+      }
 
       // Rotation + wire_mode published in 0x0800
       int reg0800 = (wire_mode_ << 1) | (rotation_ & 0x01);
       rotation_out->publish_state(reg0800);
+
+      // WiFi mode register (0x0801) reflète wifi_enabled
+      wifi_mode_out->publish_state(wifi_enabled_ ? 1 : 0);
 
       // Time registers
       std::time_t t = std::time(nullptr);
@@ -103,10 +116,6 @@ namespace esphome {
         time_md_out->publish_state(md);
         time_yw_out->publish_state(yw);
       }
-
-      ip_out->publish_state(0);        // Placeholder
-      mac_out->publish_state(0);       // Placeholder
-      portal_pwd_out->publish_state(0);// Placeholder
     }
 
   }  // namespace smartevse_sensorbox

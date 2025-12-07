@@ -38,6 +38,7 @@ namespace esphome {
             // Nouveaux paramètres configurables
             void set_rotation(int r) { rotation_ = r; }
             void set_wire_mode(int w) { wire_mode_ = w; }
+            void set_wifi_enabled(bool e) { wifi_enabled_ = e; }
 
             // Outputs (Sensorbox-V2 registers)
             sensor::Sensor *ct_phase_a_out = new sensor::Sensor();       // 0x000E
@@ -98,7 +99,8 @@ namespace esphome {
 
             // Nouveaux paramètres
             int rotation_{0};   // 0 = droite, 1 = gauche
-            int wire_mode_{1};  // 0 = 4 fils, 1 = 3 fils (par défaut SCT013)
+            int wire_mode_{1};  // 0 = 4 fils, 1 = 3 fils
+            bool wifi_enabled_{true}; // true = WiFi actif, false = désactivé
 
             inline float calibrate_(float raw, float gain, float offset) const { return raw * gain + offset; }
         };
