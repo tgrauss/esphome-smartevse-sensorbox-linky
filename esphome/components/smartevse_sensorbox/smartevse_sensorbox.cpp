@@ -43,7 +43,7 @@ namespace esphome {
         ct_total_current_out->publish_state(i_total);
       }
 
-      // 3) Compute total power
+      // 3) Compute total power (CT-based)
       float p_total_ct = NAN;
       if (!isnan(ia) && !isnan(ib) && !isnan(ic)) {
         if (three_phase_) {
@@ -54,6 +54,15 @@ namespace esphome {
         }
       }
 
+      // 4) Linky TIC passthrough
+      if (linky_power_in_ && linky_power_in_->has_state()) {
+        linky_power_out->publish_state(linky_power_in_->state);
+      }
+      if (linky_energy_in_ && linky_energy_in_->has_state()) {
+        linky_energy_out->publish_state(linky_energy_in_->state);
+      }
+
+      // 5) Choix de la puissance totale
       float p_out = NAN;
       if (prefer_linky_power_ && linky_power_in_ && linky_power_in_->has_state()) {
         p_out = linky_power_in_->state;
@@ -62,50 +71,54 @@ namespace esphome {
       }
       ct_total_power_out->publish_state(p_out);
 
-      // 4) Linky passthrough
-      if (linky_power_in_) {
-        linky_power_out->publish_state(linky_power_in_->has_state() ? linky_power_in_->state : NAN);
-      }
-      if (linky_energy_in_) {
-        linky_energy_out->publish_state(linky_energy_in_->has_state() ? linky_energy_in_->state : NAN);
-      }
+      // 6) Publier courants et tensions TIC
+      if (linky_current_l1_in_ && linky_current_l1_in_->has_state())
+        p1_current_l1_out->publish_state(linky_current_l1_in_->state);
+      if (linky_current_l2_in_ && linky_current_l2_in_->has_state())
+        p1_current_l2_out->publish_state(linky_current_l2_in_->state);
+      if (linky_current_l3_in_ && linky_current_l3_in_->has_state())
+        p1_current_l3_out->publish_state(linky_current_l3_in_->state);
 
-      // 5) Preference flag
+      if (linky_voltage_l1_in_ && linky_voltage_l1_in_->has_state())
+        voltage_l1_out->publish_state(linky_voltage_l1_in_->state);
+      if (linky_voltage_l2_in_ && linky_voltage_l2_in_->has_state())
+        voltage_l2_out->publish_state(linky_voltage_l2_in_->state);
+      if (linky_voltage_l3_in_ && linky_voltage_l3_in_->has_state())
+        voltage_l3_out->publish_state(linky_voltage_l3_in_->state);
+
+      // 7) Preference flag
       prefer_ct_out->publish_state(prefer_linky_power_ ? 0.0f : 1.0f);
 
-      // 6) Extra registers for Sensorbox-V2
-      version_out->publish_state(0x0114); // Example version
-      dsmr_info_out->publish_state(0x3283); // Example DSMR info
+      // 8) Extra registers
+      version_out->publish_state(0x0114); // Exemple version
+      dsmr_info_out->publish_state(0x3283); // Exemple DSMR info
 
-      voltage_l1_out->publish_state(nominal_voltage_phase_);
-      voltage_l2_out->publish_state(nominal_voltage_phase_);
-      voltage_l3_out->publish_state(nominal_voltage_phase_);
-
-      p1_current_l1_out->publish_state(NAN); // Not connected
-      p1_current_l2_out->publish_state(NAN);
-      p1_current_l3_out->publish_state(NAN);
-
-      // WiFi status based on wifi_enabled parameter
-      if (wifi_enabled_) {
-        wifi_status_out->publish_state(1); // WiFi actif
-        ip_out->publish_state(0xC0A80101); // Exemple IP 192.168.1.1
-        mac_out->publish_state(0x112233445566); // Exemple MAC
-        portal_pwd_out->publish_state(1234); // Exemple mot de passe portail
-      } else {
+      // WiFi status based on wifi_mode parameter
+      if (wifi_mode_ == 0) {
         wifi_status_out->publish_state(0); // WiFi désactivé
         ip_out->publish_state(0);
         mac_out->publish_state(0);
         portal_pwd_out->publish_state(0);
+      } else if (wifi_mode_ == 1) {
+        wifi_status_out->publish_state(1); // WiFi actif
+        ip_out->publish_state(0xC0A80101); // Exemple IP 192.168.1.1
+        mac_out->publish_state(0x112233445566); // Exemple MAC
+        portal_pwd_out->publish_state(1234); // Exemple mot de passe portail
+      } else if (wifi_mode_ == 2) {
+        wifi_status_out->publish_state(2); // Mode portail
+        ip_out->publish_state(0xC0A801FE); // Exemple IP portail
+        mac_out->publish_state(0xAABBCCDDEEFF); // Exemple MAC portail
+        portal_pwd_out->publish_state(5678); // Exemple mot de passe portail
       }
 
       // Rotation + wire_mode published in 0x0800
       int reg0800 = (wire_mode_ << 1) | (rotation_ & 0x01);
       rotation_out->publish_state(reg0800);
 
-      // WiFi mode register (0x0801) reflète wifi_enabled
-      wifi_mode_out->publish_state(wifi_enabled_ ? 1 : 0);
+      // WiFi mode register (0x0801)
+      wifi_mode_out->publish_state(wifi_mode_);
 
-      // Time registers
+      // 9) Time registers
       std::time_t t = std::time(nullptr);
       std::tm *tm = std::localtime(&t);
       if (tm) {

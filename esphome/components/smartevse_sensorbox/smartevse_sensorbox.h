@@ -10,14 +10,21 @@ namespace esphome {
         public:
             SmartEVSESensorBox();
 
-            // Inputs (ADS1115 channels and Linky)
+            // Inputs (ADS1115 channels)
             void set_ct_phase_a_input(sensor::Sensor *s) { ct_a_in_ = s; }
             void set_ct_phase_b_input(sensor::Sensor *s) { ct_b_in_ = s; }
             void set_ct_phase_c_input(sensor::Sensor *s) { ct_c_in_ = s; }
             void set_ads_ref_input(sensor::Sensor *s) { ads_ref_in_ = s; }
 
-            void set_linky_power_input(sensor::Sensor *s) { linky_power_in_ = s; }
-            void set_linky_energy_input(sensor::Sensor *s) { linky_energy_in_ = s; }
+            // Inputs (Teleinfo sensors)
+            void set_linky_power_input(sensor::Sensor *s) { linky_power_in_ = s; }   // SINSTS
+            void set_linky_energy_input(sensor::Sensor *s) { linky_energy_in_ = s; } // EAST
+            void set_linky_current_l1(sensor::Sensor *s) { linky_current_l1_in_ = s; } // IRMS1
+            void set_linky_current_l2(sensor::Sensor *s) { linky_current_l2_in_ = s; } // IRMS2
+            void set_linky_current_l3(sensor::Sensor *s) { linky_current_l3_in_ = s; } // IRMS3
+            void set_linky_voltage_l1(sensor::Sensor *s) { linky_voltage_l1_in_ = s; } // URMS1
+            void set_linky_voltage_l2(sensor::Sensor *s) { linky_voltage_l2_in_ = s; } // URMS2
+            void set_linky_voltage_l3(sensor::Sensor *s) { linky_voltage_l3_in_ = s; } // URMS3
 
             // Calibration
             void set_ct_gain_a(float g) { ct_gain_a_ = g; }
@@ -35,10 +42,10 @@ namespace esphome {
             void set_three_phase(bool t) { three_phase_ = t; }
             void set_prefer_linky_power(bool p) { prefer_linky_power_ = p; }
 
-            // Nouveaux paramètres configurables
+            // Paramètres configurables via Holding Registers
             void set_rotation(int r) { rotation_ = r; }
             void set_wire_mode(int w) { wire_mode_ = w; }
-            void set_wifi_enabled(bool e) { wifi_enabled_ = e; }
+            void set_wifi_mode(int m) { wifi_mode_ = m; } // 0=disabled, 1=enabled, 2=portal
 
             // Outputs (Sensorbox-V2 registers)
             sensor::Sensor *ct_phase_a_out = new sensor::Sensor();       // 0x000E
@@ -73,13 +80,21 @@ namespace esphome {
             void update() override;
 
         protected:
-            // Inputs
+            // Inputs CT
             sensor::Sensor *ct_a_in_{nullptr};
             sensor::Sensor *ct_b_in_{nullptr};
             sensor::Sensor *ct_c_in_{nullptr};
             sensor::Sensor *ads_ref_in_{nullptr};
+
+            // Inputs TIC
             sensor::Sensor *linky_power_in_{nullptr};
             sensor::Sensor *linky_energy_in_{nullptr};
+            sensor::Sensor *linky_current_l1_in_{nullptr};
+            sensor::Sensor *linky_current_l2_in_{nullptr};
+            sensor::Sensor *linky_current_l3_in_{nullptr};
+            sensor::Sensor *linky_voltage_l1_in_{nullptr};
+            sensor::Sensor *linky_voltage_l2_in_{nullptr};
+            sensor::Sensor *linky_voltage_l3_in_{nullptr};
 
             // Calibration
             float ct_gain_a_{1.0f};
@@ -97,10 +112,10 @@ namespace esphome {
             bool three_phase_{false};
             bool prefer_linky_power_{true};
 
-            // Nouveaux paramètres
+            // Paramètres configurables
             int rotation_{0};   // 0 = droite, 1 = gauche
             int wire_mode_{1};  // 0 = 4 fils, 1 = 3 fils
-            bool wifi_enabled_{true}; // true = WiFi actif, false = désactivé
+            int wifi_mode_{1};  // 0 = désactivé, 1 = activé, 2 = portail
 
             inline float calibrate_(float raw, float gain, float offset) const { return raw * gain + offset; }
         };

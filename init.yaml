@@ -1,0 +1,160 @@
+esphome:
+  name: smartevse-sensorbox
+  platform: ESP32
+  board: esp32-s3-devkitc-1
+
+# -------------------------------
+# I²C pour ADS1115 (CT)
+# -------------------------------
+i2c:
+  # ESP32-S3-Zero
+  sda: GPIO6
+  scl: GPIO5
+  # ESP32-S3-ETH (PoE)
+  # sda: GPIO1
+  # scl: GPIO2
+  scan: true
+
+ads1115:
+  - id: ads1115_ct
+    address: 0x48
+
+# -------------------------------
+# UARTs regroupés
+# -------------------------------
+uart:
+  - id: uart_tic
+    rx_pin: GPIO44
+    baud_rate: 9600
+    parity: EVEN
+    data_bits: 7
+    stop_bits: 1
+
+  - id: uart_smartevse
+    # ESP32-S3-Zero
+    tx_pin: GPIO11
+    rx_pin: GPIO13
+    # ESP32-S3-ETH (PoE)
+    # tx_pin: GPIO40
+    # rx_pin: GPIO42
+    baud_rate: 9600
+
+  - id: uart_esphome
+    # ESP32-S3-Zero
+    tx_pin: GPIO7
+    rx_pin: GPIO9
+    # ESP32-S3-ETH (PoE)
+    # tx_pin: GPIO37
+    # rx_pin: GPIO39
+    baud_rate: 9600
+
+# -------------------------------
+# Teleinfo (TIC Linky)
+# -------------------------------
+teleinfo:
+  id: linky_tic
+  uart_id: uart_tic
+  update_interval: 2s
+  historical_mode: false
+
+sensor:
+  - platform: teleinfo
+    tag_name: "EAST"
+    name: Energie soutirée
+    id: east
+    unit_of_measurement: "Wh"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "SINSTS"
+    name: Puissance apparente totale
+    id: sinsts
+    unit_of_measurement: "VA"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "IRMS1"
+    name: Courant phase 1
+    id: irms1
+    unit_of_measurement: "A"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "IRMS2"
+    name: Courant phase 2
+    id: irms2
+    unit_of_measurement: "A"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "IRMS3"
+    name: Courant phase 3
+    id: irms3
+    unit_of_measurement: "A"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "URMS1"
+    name: Tension phase 1
+    id: urms1
+    unit_of_measurement: "V"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "URMS2"
+    name: Tension phase 2
+    id: urms2
+    unit_of_measurement: "V"
+    teleinfo_id: linky_tic
+
+  - platform: teleinfo
+    tag_name: "URMS3"
+    name: Tension phase 3
+    id: urms3
+    unit_of_measurement: "V"
+    teleinfo_id: linky_tic
+
+# -------------------------------
+# Modbus servers regroupés
+# -------------------------------
+modbus_server:
+  - id: mb_smartevse
+    uart_id: uart_smartevse
+    # ESP32-S3-Zero
+    enable_pin: GPIO12
+    # ESP32-S3-ETH (PoE)
+    # enable_pin: GPIO41
+
+  - id: mb_esphome
+    uart_id: uart_esphome
+    # ESP32-S3-Zero
+    enable_pin: GPIO8
+    # ESP32-S3-ETH (PoE)
+    # enable_pin: GPIO38
+
+# -------------------------------
+# Composant custom SensorBox
+# -------------------------------
+smartevse_sensorbox:
+  ct_phase_a: ct_a_in
+  ct_phase_b: ct_b_in
+  ct_phase_c: ct_c_in
+  ads_ref: ads_ref_in
+  # Alimentation des registres depuis TIC
+  linky_power: sinsts
+  linky_energy: east
+  linky_current_l1: irms1
+  linky_current_l2: irms2
+  linky_current_l3: irms3
+  linky_voltage_l1: urms1
+  linky_voltage_l2: urms2
+  linky_voltage_l3: urms3
+  nominal_voltage: 230
+  power_factor: 0.95
+  three_phase: true
+  prefer_linky_power: true
+  autocalibration: true
+  rotation: 0         # 0= droite, 1= gauche
+  wire_mode: 1        # 0= 4 fils, 1= 3 fils
+  wifi_mode: 1        # 0= désactivé, 1= activé, 2= portail
+  update_interval: 1s
