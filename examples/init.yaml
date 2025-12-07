@@ -31,6 +31,18 @@ wifi:
 
 captive_portal:
 
+ -------------------------------
+# Ethernet W5500 (ESP32-S3-ETH PoE)
+# -------------------------------
+#ethernet:
+#  type: W5500
+#  clk_pin: GPIO13   # SCLK
+#  mosi_pin: GPIO11  # MOSI
+#  miso_pin: GPIO12  # MISO
+#  cs_pin: GPIO14    # CS
+#  reset_pin: GPIO9  # RST
+#  interrupt_pin: GPIO10  # INT
+
 api:
   # Don't reboot if the HomeAssistant connection times out (we can do just fine without it)
   reboot_timeout: 0s
@@ -57,8 +69,12 @@ time:
 # I²C pour ADS1115 (CT)
 # -------------------------------
 i2c:
+  # ESP32-S3-Zero
   sda: GPIO6
   scl: GPIO5
+  # ESP32-S3-ETH (PoE)
+  # sda: GPIO1
+  # scl: GPIO2
   scan: true
 
 ads1115:
@@ -69,6 +85,7 @@ ads1115:
 # UARTs
 # -------------------------------
 uart:
+  # UART TIC Linky (direct on GPIO44 in 7E1)
   - id: uart_tic
     rx_pin: GPIO44
     baud_rate: 9600
@@ -76,15 +93,26 @@ uart:
     data_bits: 7
     stop_bits: 1
 
+  # UART for SmartEVSE (RS485, ESP32 slave)
   - id: uart_smartevse
+    # ESP32-S3-Zero
     tx_pin: GPIO11
     rx_pin: GPIO13
+    # ESP32-S3-ETH (PoE)
+    # tx_pin: GPIO40
+    # rx_pin: GPIO42
     baud_rate: 9600
 
+  # UART for Modbus slave (other ESPHome/masters)
   - id: uart_esphome
+    # ESP32-S3-Zero
     tx_pin: GPIO7
     rx_pin: GPIO9
+    # ESP32-S3-ETH (PoE)
+    # tx_pin: GPIO37
+    # rx_pin: GPIO39
     baud_rate: 9600
+
 
 # -------------------------------
 # Teleinfo (TIC Linky)
@@ -158,15 +186,23 @@ sensor:
 modbus_server:
   - id: mb_smartevse
     uart_id: uart_smartevse
+    # ESP32-S3-Zero
     enable_pin: GPIO12
+    # ESP32-S3-ETH (PoE)
+    # enable_pin: GPIO41
     address: 10
     baud_rate: 9600
 
   - id: mb_esphome
     uart_id: uart_esphome
+    # ESP32-S3-Zero
     enable_pin: GPIO8
+    # ESP32-S3-ETH (PoE)
+    # enable_pin: GPIO38
     address: 100
     baud_rate: 9600
+
+
 
 # -------------------------------
 # Composant SensorBox
