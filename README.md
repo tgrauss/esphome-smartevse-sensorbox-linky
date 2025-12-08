@@ -4,7 +4,7 @@ Ce projet est une adaptation de la **SensorBox SmartEVSE** pour ESPHome.
 Il permet de remplacer le matériel d’origine par une solution basée sur ESP32‑S3, avec :
 
 - 3 sondes de courant SCT013 (100A/50mA) connectées via un ADS1115.  
-- Le compteur Linky connecté en **TIC direct** (UART 7E1).  
+- Le compteur Linky connecté en **TIC direct** (UART gpio44).  
 - Deux bus RS485 Modbus :  
   - **Bus SmartEVSE** : compatibilité avec le protocole SensorBox‑V2.  
   - **Bus ESPHome** : mapping complet des étiquettes Teleinfo selon la norme définie dans [linky_modbus](https://github.com/tgrauss/linky_modbus), plus des registres supplémentaires pour exposer les infos SmartEVSE.  
