@@ -25,7 +25,7 @@ wifi:
   power_save_mode: none
   output_power: 8.5
 
-  ap:
+ap:
     ssid: !secret ap_ssid
     password: !secret ap_password
 
@@ -43,12 +43,12 @@ captive_portal:
 #  reset_pin: GPIO9  # RST
 #  interrupt_pin: GPIO10  # INT
 
-api:
+#api:
   # Don't reboot if the HomeAssistant connection times out (we can do just fine without it)
-  reboot_timeout: 0s
-  batch_delay: 50ms
-  encryption:
-    key: !secret api_key
+#  reboot_timeout: 0s
+#  batch_delay: 50ms
+#  encryption:
+#    key: !secret api_key
 
 ota:
   - platform: esphome
@@ -202,8 +202,6 @@ modbus_server:
     address: 100
     baud_rate: 9600
 
-
-
 # -------------------------------
 # Composant SensorBox
 # -------------------------------
@@ -248,6 +246,7 @@ smartevse_modbus:
   profile: linky_modbus
 
 
+# Désactiver si utilise esp32-s3-ethe (POE)
 sensor:
   - platform: wifi_signal
     name: "WiFi Level"
