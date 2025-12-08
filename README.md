@@ -86,8 +86,7 @@ Il suffit de déclarer les capteurs dans la configuration ESPHome, Home Assistan
 
 ## Usage du serveur Modbus
 
-Le serveur Modbus intégré n’est pas destiné à un usage industriel.  
-Il sert à deux choses :
+Le serveur Modbus intégré sert à deux choses :
 - Assurer la compatibilité avec SmartEVSE (profil `smartevse_v2`).  
 - Permettre à un **autre ESPHome** ou microcontrôleur de se connecter en RS485 et de lire les registres exposés (profil `linky_modbus`).  
 
