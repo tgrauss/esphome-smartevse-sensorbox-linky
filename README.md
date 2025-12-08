@@ -1,185 +1,108 @@
-# SmartEVSE SensorBox Linky (ESP32-S3)
+# SmartEVSE SensorBox Linky (ESP32‑S3)
 
 Ce projet est une adaptation de la **SensorBox SmartEVSE** pour ESPHome.  
 Il permet de remplacer le matériel d’origine par une solution basée sur ESP32‑S3, avec :
 
-- 3 sondes de courant SCT013 (100A/50mA) connectées via un ADS1115.
-- Le compteur Linky connecté en **TIC direct** (UART 7E1).
-- Deux bus RS485 Modbus :
-  - **Bus SmartEVSE** : compatibilité avec le protocole SensorBox‑V2.
-  - **Bus ESPHome** : mapping complet des étiquettes Teleinfo selon [linky_modbus](https://github.com/tgrauss/linky_modbus).
+- 3 sondes de courant SCT013 (100A/50mA) connectées via un ADS1115.  
+- Le compteur Linky connecté en **TIC direct** (UART 7E1).  
+- Deux bus RS485 Modbus :  
+  - **Bus SmartEVSE** : compatibilité avec le protocole SensorBox‑V2.  
+  - **Bus ESPHome** : mapping complet des étiquettes Teleinfo selon la norme définie dans [linky_modbus](https://github.com/tgrauss/linky_modbus), plus des registres supplémentaires pour exposer les infos SmartEVSE.  
 - Exposition des valeurs à Home Assistant via API ESPHome.
 
 ---
 
-## 📦 Modules custom
+## Modules custom
 
-Le projet s’appuie sur plusieurs composants custom ESPHome :
-
-- **`smartevse_sensorbox`**  
+- **smartevse_sensorbox**  
   Agrège les mesures des sondes CT (ADS1115) et du compteur Linky (TIC).  
-  Calibre les valeurs et publie les registres internes (courants, tensions, puissance, énergie, etc.).  
-  Configurable via YAML (gains, offsets, tension nominale, facteur de puissance, etc.).
+  Calibre les valeurs et publie les registres internes (courants, tensions, puissance, énergie, etc.).
 
-- **`smartevse_modbus`**  
+- **smartevse_modbus**  
   Fait le mapping des registres internes de la `SensorBox` vers un serveur Modbus.  
-  Deux profils disponibles :
-  - `smartevse_v2` : compatibilité avec SmartEVSE (SensorBox‑V2).
+  Deux profils disponibles :  
+  - `smartevse_v2` : compatibilité avec SmartEVSE (SensorBox‑V2).  
   - `linky_modbus` : compatibilité avec le mapping complet des étiquettes Teleinfo (projet linky_modbus), plus les CT et paramètres SensorBox.
 
-- **`modbus_server`**  
+- **modbus_server**  
   Composant custom qui implémente un serveur Modbus esclave dans ESPHome.  
   Utilisé par `smartevse_modbus` pour publier les registres sur un bus RS485.
 
 ---
 
-## 🔌 Compatibilité SmartEVSE
+## Compatibilité SmartEVSE (profil `smartevse_v2`)
 
-Le composant expose **tous les registres Modbus de la SensorBox‑V2** :
+- Adresse esclave : 10, vitesse 9600 bps.  
+- Input Registers (FC=04) : version, DSMR/TIC info, tensions, courants CT, WiFi, heure/date, IP, MAC.  
+- Holding Registers (FC=06) :  
+  - 0x0800 : registre de configuration (bitfield)  
+    - bit 0 = rotation champ  
+    - bit 1 = configuration 3/4 fils  
+  - 0x0801 : mode WiFi (0 = désactivé, 1 = activé, 2 = portail).  
 
-- Adresse esclave : `0x0A`, vitesse `9600 bps`.
-- Input Registers (FC=04) : version, DSMR/TIC info, tensions, courants CT, WiFi, heure/date, IP, MAC.
-- Holding Registers (FC=06) :
-  - `0x0800` (bits) : rotation champ (bit 0), configuration 3/4 fils (bit 1).
-  - `0x0801` : mode WiFi (0 = désactivé, 1 = activé, 2 = portail).
-
----
-
-## 📊 Compatibilité Linky Modbus
-
-Le deuxième bus RS485 expose toutes les étiquettes Teleinfo selon le mapping [linky_modbus](https://github.com/tgrauss/linky_modbus).  
-Exemples d’adresses :
-
-| Étiquette | Adresse | Type   |
-|-----------|---------|--------|
-| EAST      | 0  | U_DWORD |
-| IRMS1     | 24  | U_WORD  |
-| IRMS2     | 25  | U_WORD  |
-| IRMS3     | 26  | U_WORD  |
-| URMS1     | 27  | U_WORD  |
-| URMS2     | 28  | U_WORD  |
-| URMS3     | 29  | U_WORD  |
-| SINSTS    | 30  | U_DWORD |
-
-Les autres étiquettes (EASFxx, SMAXSNx, PREF, CCASN, NTARF, NJOURF, NGTF, LTARF, etc.) sont également mappées selon le tableau du projet linky_modbus.  
-En plus, les valeurs des sondes CT et les paramètres SensorBox (rotation, wire_mode, wifi_mode) sont exposés.
+👉 Les adresses sont indiquées en **hexadécimal** pour correspondre à la documentation SmartEVSE.
 
 ---
 
-## 🏗️ Architecture
+## Compatibilité Linky Modbus (profil `linky_modbus`)
 
-```text
-                ┌───────────────────────┐
-                │   SmartEVSESensorBox  │
-                │  (ESP32-S3 + ADS1115) │
-                │   CT + TIC Linky      │
-                └──────────┬────────────┘
-                           │
-                           │ valeurs internes
-                           ▼
-                ┌───────────────────────┐
-                │   smartevse_sensorbox │
-                │   (composant custom)  │
-                └──────────┬────────────┘
-                           │
-          ┌────────────────┴────────────────┐
-          │                                 │
-          ▼                                 ▼
-┌───────────────────────┐         ┌───────────────────────┐
-│   smartevse_modbus    │         │   smartevse_modbus    │
-│   profil smartevse_v2 │         │  profil linky_modbus  │
-└──────────┬────────────┘         └──────────┬────────────┘
-           │                                 │
-           ▼                                 ▼
-┌───────────────────────┐         ┌───────────────────────┐
-│   modbus_server       │         │   modbus_server       │
-│   (mb_smartevse)      │         │   (mb_esphome)        │
-└──────────┬────────────┘         └──────────┬────────────┘
-           │                                 │
-           ▼                                 ▼
-   RS485 Bus vers SmartEVSE          RS485 Bus vers autre
-   (maître SmartEVSE)                maître ESPHome (linky_modbus)
-```
+Le deuxième bus RS485 expose toutes les étiquettes Teleinfo du compteur Linky.  
+👉 Les adresses sont indiquées en **décimal** pour correspondre à la norme que j’ai définie dans le projet [linky_modbus](https://github.com/tgrauss/linky_modbus).
+
+⚠️ Attention : le compteur Linky ne fournit pas directement de registres Modbus.  
+Ce mapping est une convention propre à mes projets, qui permet d’exposer les étiquettes TIC sous forme de registres Modbus.
 
 ---
 
-## ⚙️ Configuration YAML
+## Registres supplémentaires (après les adresses Linky)
 
-La configuration complète est disponible dans `examples/init.yaml`.
-Elle regroupe :
-- UART TIC, UART SmartEVSE, UART Modbus
-- Deux serveurs Modbus (`mb_smartevse`, `mb_esphome`)
-- Capteurs TIC (EAST, EAIT, EASFxx, SINSTS, IRMS1‑3, URMS1‑3, SMAXSNx, PREF, PCOUP, NTARF, LTARF, NJOURF, NGTF, PJOURF+1, PPOINTE, etc.)
-- Composant `smartevse_sensorbox` (CT + TIC)
-- Composant `smartevse_modbus` (mapping Modbus)
+- 80 : Courant CT1 (U_WORD, A)  
+- 81 : Courant CT2 (U_WORD, A)  
+- 82 : Courant CT3 (U_WORD, A)  
+- 84 : Puissance CT1 (U_WORD, W)  
+- 85 : Puissance CT2 (U_WORD, W)  
+- 86 : Puissance CT3 (U_WORD, W)  
+- 70 : Courant total CT
+- 72 : Puissance totale mesurée par CT (U_DWORD, VA)  
+- 90 : Registre de configuration (bitfield)  
+  - bit 0 = rotation champ  
+  - bit 1 = configuration 3/4 fils  
+- 91 : Mode WiFi (U_WORD)  
+  - 0 = désactivé  
+  - 1 = activé  
+  - 2 = portail  
 
----
-
-### Exemple minimal (à placer dans votre configuration ESPHome) :
-
-```yaml
-smartevse_modbus:
-  id: mb_esphome
-  modbus_server_id: mb_server_esphome
-  sensorbox_id: sensorbox
-  profile: linky_modbus
-
-Paramètre profile :
-- smartevse_v2 : compatibilité 100% avec SmartEVSE (SensorBox‑V2) sur son bus dédié
-- linky_modbus : expose toutes les étiquettes Teleinfo + sondes CT individuelles sur le bus esclave destiné aux autres maîtres ESPHome/tiers
-```
+Ces adresses sont en **décimal**, pour rester cohérentes avec le mapping `linky_modbus`.
 
 ---
 
-## 🧩 Profils Modbus
+## Intégration Home Assistant
 
-- Profil smartevse_v2 :
-  - Mappage strictement identique à la SensorBox‑V2
-  - Aucune extension, aucune adresse modifiée
-  - À utiliser sur le bus connecté au SmartEVSE (maître SmartEVSE)
-
-- Profil linky_modbus :
-  - Mappage complet des étiquettes Teleinfo et des CT (totaux + phases)
-  - Destiné au bus esclave pour autres maîtres (ESPHome/PLC/SCADA)
+Home Assistant n’utilise pas directement Modbus dans ce projet.  
+Les données sont exposées via l’API ESPHome et apparaissent automatiquement comme des entités `sensor:` dans Home Assistant.  
+Il suffit de déclarer les capteurs dans la configuration ESPHome, Home Assistant les découvrira via l’intégration officielle ESPHome.
 
 ---
 
-## 🏠 Intégration Home Assistant
+## Usage du serveur Modbus
 
-Les capteurs exposés par `smartevse_sensorbox` sont publiés vers Home Assistant via l’API ESPHome.
-Le bus linky_modbus permet également à d’autres maîtres de lire ces registres via Modbus RTU.
+Le serveur Modbus intégré n’est pas destiné à un usage industriel.  
+Il sert à deux choses :
+- Assurer la compatibilité avec SmartEVSE (profil `smartevse_v2`).  
+- Permettre à un **autre ESPHome** ou microcontrôleur de se connecter en RS485 et de lire les registres exposés (profil `linky_modbus`).  
 
-Exemple de template simple :
-
-sensor:
-  - platform: template
-    sensors:
-      puissance_totale_ct:
-        friendly_name: "Puissance totale CT"
-        unit_of_measurement: "W"
-        value_template: "{{ states('sensor.smartevse_sensorbox_ct_total_power') }}"
+Ainsi, un ESPHome peut agir comme “maître” Modbus et interroger un autre ESPHome configuré comme “esclave” Modbus, ce qui facilite l’interconnexion entre plusieurs projets.
 
 ---
 
-## 📊 Dashboard Lovelace
+## Notes importantes
 
-Un exemple de configuration Lovelace est disponible dans `examples/lovelace_dashboard.yaml`.
-Il affiche :
-- Vue Énergie & Puissance : entités + jauge + graphe historique
-- Vue Courants : entités + graphes par phase
-- Vue Tensions : entités + graphes par phase
-
----
-
-## 📂 Exemples
-
-Dans `examples/` :
-- `init.yaml` : configuration ESPHome complète avec les deux profils Modbus (`smartevse_v2`, `linky_modbus`)
-- `homeassistant_entities.yaml` : exemples d’entités HA basées sur les capteurs ESPHome
-- `lovelace_dashboard.yaml` : dashboard Lovelace pour visualiser courants, tensions, puissances
+- Les adresses sont en **hex pour SmartEVSE** et en **décimal pour Linky/ESPHome**.  
+- Le registre 90 est un **bitfield** (rotation + wire_mode).  
+- Les champs texte (NGTF, LTARF, PJOURF+1, PPOINTE) sont des chaînes ASCII limitées à **8 caractères max** (4 registres Modbus chacun).  
+- Le profil `linky_modbus` expose toutes les étiquettes Teleinfo + CT + registres SmartEVSE additionnels.  
+- Le profil `smartevse_v2` reste strictement identique à la SensorBox‑V2 originale.
 
 ---
 
-## 📜 Licence
-
-Projet basé sur ESPHome, adapté pour SmartEVSE. Licence : MIT.
+👉 Ce README est volontairement simplifié. Pour le détail complet des registres TIC Linky, se référer directement au [README du projet linky_modbus](https://github.com/tgrauss/linky_modbus).
