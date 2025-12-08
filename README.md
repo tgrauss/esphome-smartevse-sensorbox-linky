@@ -8,7 +8,6 @@ Il permet de remplacer le matériel d’origine par une solution basée sur ESP3
 - Deux bus RS485 Modbus :  
   - **Bus SmartEVSE** : compatibilité avec le protocole SensorBox‑V2.  
   - **Bus ESPHome** : mapping complet des étiquettes Teleinfo selon la norme définie dans [linky_modbus](https://github.com/tgrauss/linky_modbus), plus des registres supplémentaires pour exposer les infos SmartEVSE.  
-- Exposition des valeurs à Home Assistant via API ESPHome.
 
 ---
 
@@ -73,14 +72,6 @@ Ce mapping est une convention propre à mes projets, qui permet d’exposer les 
   - 2 = portail  
 
 Ces adresses sont en **décimal**, pour rester cohérentes avec le mapping `linky_modbus`.
-
----
-
-## Intégration Home Assistant
-
-Home Assistant n’utilise pas directement Modbus dans ce projet.  
-Les données sont exposées via l’API ESPHome et apparaissent automatiquement comme des entités `sensor:` dans Home Assistant.  
-Il suffit de déclarer les capteurs dans la configuration ESPHome, Home Assistant les découvrira via l’intégration officielle ESPHome.
 
 ---
 
