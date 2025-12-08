@@ -7,12 +7,10 @@ esp32:
   framework:
     type: esp-idf
 
-# -------------------------------
-# External components
-# -------------------------------
+
 external_components:
   - source: github://tgrauss/esphome-smartevse-sensorbox-linky
-    components: [smartevse_sensorbox, smartevse_modbus, modbus_server]
+    components: [smartevse_sensorbox, modbus_server]
     refresh: 0s
 
 logger:
@@ -31,17 +29,15 @@ ap:
 
 captive_portal:
 
- -------------------------------
-# Ethernet W5500 (ESP32-S3-ETH PoE)
-# -------------------------------
-#ethernet:
-#  type: W5500
-#  clk_pin: GPIO13   # SCLK
-#  mosi_pin: GPIO11  # MOSI
-#  miso_pin: GPIO12  # MISO
-#  cs_pin: GPIO14    # CS
-#  reset_pin: GPIO9  # RST
-#  interrupt_pin: GPIO10  # INT
+# Ethernet pour ESP32-S3-ETH (désactiver wifi ci-dessus)
+# ethernet:
+#   type: W5500
+#   clk_pin: GPIO13
+#   mosi_pin: GPIO11
+#   miso_pin: GPIO12
+#   cs_pin: GPIO14
+#   reset_pin: GPIO9
+#   interrupt_pin: GPIO10
 
 #api:
   # Don't reboot if the HomeAssistant connection times out (we can do just fine without it)
@@ -65,9 +61,7 @@ time:
     timezone: Europe/Paris
     id: my_time
 
-# -------------------------------
-# I²C pour ADS1115 (CT)
-# -------------------------------
+# I2C pour ADS1115
 i2c:
   # ESP32-S3-Zero
   sda: GPIO6
@@ -81,11 +75,8 @@ ads1115:
   - id: ads1115_ct
     address: 0x48
 
-# -------------------------------
-# UARTs
-# -------------------------------
+# UART TIC Linky
 uart:
-  # UART TIC Linky (direct on GPIO44 in 7E1)
   - id: uart_tic
     rx_pin: GPIO44
     baud_rate: 9600
@@ -93,102 +84,40 @@ uart:
     data_bits: 7
     stop_bits: 1
 
-  # UART for SmartEVSE (RS485, ESP32 slave)
-  - id: uart_smartevse
-    # ESP32-S3-Zero
-    tx_pin: GPIO11
-    rx_pin: GPIO13
-    # ESP32-S3-ETH (PoE)
-    # tx_pin: GPIO40
-    # rx_pin: GPIO42
-    baud_rate: 9600
-
-  # UART for Modbus slave (other ESPHome/masters)
-  - id: uart_esphome
-    # ESP32-S3-Zero
-    tx_pin: GPIO7
-    rx_pin: GPIO9
-    # ESP32-S3-ETH (PoE)
-    # tx_pin: GPIO37
-    # rx_pin: GPIO39
-    baud_rate: 9600
-
-
-# -------------------------------
-# Teleinfo (TIC Linky)
-# -------------------------------
 teleinfo:
   id: linky_tic
   uart_id: uart_tic
   update_interval: 2s
   historical_mode: false
 
-sensor:
-  - platform: teleinfo
-    tag_name: "EAST"
-    id: east
-    name: "Energie soutirée"
-    unit_of_measurement: "Wh"
-    teleinfo_id: linky_tic
+# UART SmartEVSE RS485
+uart:
+  - id: uart_smartevse
+    # ESP32-S3-Zero
+    tx_pin: GPIO11
+    rx_pin: GPIO13
+    # ESP32-S3-ETH
+    # tx_pin: GPIO40
+    # rx_pin: GPIO42
+    baud_rate: 9600
 
-  - platform: teleinfo
-    tag_name: "SINSTS"
-    id: sinsts
-    name: "Puissance apparente totale"
-    unit_of_measurement: "VA"
-    teleinfo_id: linky_tic
+# UART ESPHome RS485
+uart:
+  - id: uart_esphome
+    # ESP32-S3-Zero
+    tx_pin: GPIO7
+    rx_pin: GPIO9
+    # ESP32-S3-ETH
+    # tx_pin: GPIO37
+    # rx_pin: GPIO39
+    baud_rate: 9600
 
-  - platform: teleinfo
-    tag_name: "IRMS1"
-    id: irms1
-    name: "Courant phase 1"
-    unit_of_measurement: "A"
-    teleinfo_id: linky_tic
-
-  - platform: teleinfo
-    tag_name: "IRMS2"
-    id: irms2
-    name: "Courant phase 2"
-    unit_of_measurement: "A"
-    teleinfo_id: linky_tic
-
-  - platform: teleinfo
-    tag_name: "IRMS3"
-    id: irms3
-    name: "Courant phase 3"
-    unit_of_measurement: "A"
-    teleinfo_id: linky_tic
-
-  - platform: teleinfo
-    tag_name: "URMS1"
-    id: urms1
-    name: "Tension phase 1"
-    unit_of_measurement: "V"
-    teleinfo_id: linky_tic
-
-  - platform: teleinfo
-    tag_name: "URMS2"
-    id: urms2
-    name: "Tension phase 2"
-    unit_of_measurement: "V"
-    teleinfo_id: linky_tic
-
-  - platform: teleinfo
-    tag_name: "URMS3"
-    id: urms3
-    name: "Tension phase 3"
-    unit_of_measurement: "V"
-    teleinfo_id: linky_tic
-
-# -------------------------------
-# Deux serveurs Modbus
-# -------------------------------
 modbus_server:
   - id: mb_smartevse
     uart_id: uart_smartevse
     # ESP32-S3-Zero
     enable_pin: GPIO12
-    # ESP32-S3-ETH (PoE)
+    # ESP32-S3-ETH
     # enable_pin: GPIO41
     address: 10
     baud_rate: 9600
@@ -197,53 +126,33 @@ modbus_server:
     uart_id: uart_esphome
     # ESP32-S3-Zero
     enable_pin: GPIO8
-    # ESP32-S3-ETH (PoE)
+    # ESP32-S3-ETH
     # enable_pin: GPIO38
     address: 100
     baud_rate: 9600
 
-# -------------------------------
-# Composant SensorBox
-# -------------------------------
 smartevse_sensorbox:
   id: sensorbox
-  ct_phase_a: ct_a_in
-  ct_phase_b: ct_b_in
-  ct_phase_c: ct_c_in
-  ads_ref: ads_ref_in
-  linky_power: sinsts
-  linky_energy: east
-  linky_current_l1: irms1
-  linky_current_l2: irms2
-  linky_current_l3: irms3
-  linky_voltage_l1: urms1
-  linky_voltage_l2: urms2
-  linky_voltage_l3: urms3
-  nominal_voltage: 230
-  power_factor: 0.95
-  three_phase: true
+  ads1115_id: ads1115_ct
+  teleinfo_id: linky_tic
+  modbus_smartevse_id: mb_smartevse
+  modbus_esphome_id: mb_esphome
+  three_phase: false
   prefer_linky_power: true
-  autocalibration: true
   rotation: 0
   wire_mode: 1
-  wifi_mode: 1
-  update_interval: 1s
-
-# -------------------------------
-# Mapping Modbus vers SmartEVSE
-# -------------------------------
-smartevse_modbus:
-  modbus_server_id: mb_smartevse
-  sensorbox_id: sensorbox
-  profile: smartevse_v2
-
-# -------------------------------
-# Mapping Modbus vers autre maître ESPHome
-# -------------------------------
-smartevse_modbus:
-  modbus_server_id: mb_esphome
-  sensorbox_id: sensorbox
-  profile: linky_modbus
+  wifi_mode: 1   # mettre 0 si ETH
+  ct_gain_a: 1.0
+  ct_gain_b: 1.0
+  ct_gain_c: 1.0
+  ct_offset_a: 0.0
+  ct_offset_b: 0.0
+  ct_offset_c: 0.0
+  ads_ref_voltage: 1.0
+  nominal_voltage: 230.0
+  power_factor: 0.95
+  fast_interval_ms: 1000
+  slow_interval_ms: 2000
 
 
 # Désactiver si utilise esp32-s3-ethe (POE)
@@ -255,4 +164,3 @@ sensor:
 switch:
   - platform: restart
     name: "Restart"
-
